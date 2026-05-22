@@ -4,7 +4,7 @@ import { Text } from "../components/atoms/Text";
 import { SEED_GAME } from "../data/game";
 
 const GITHUB_REPO = "https://github.com/PabsMW/rhyme-reason";
-const VERCEL_PROJECT = "https://vercel.com/new/clone?repository-url=https://github.com/PabsMW/rhyme-reason";
+const VERCEL_PRODUCTION = "https://rhyme-reason-phi.vercel.app";
 
 type ConnectionCheck = {
   name: string;
@@ -131,12 +131,12 @@ export function HelloWorldPage() {
             </a>
           ) : (
             <a
-              href={VERCEL_PROJECT}
+              href={VERCEL_PRODUCTION}
               target="_blank"
               rel="noreferrer"
               className="text-game-text-base-secondary underline hover:text-game-text-base-primary"
             >
-              Import to Vercel (GitHub)
+              Vercel production
             </a>
           )}
           {import.meta.env.DEV ? (

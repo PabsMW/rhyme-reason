@@ -33,7 +33,11 @@ https://github.com/PabsMW/rhyme-reason
 
 ## Vercel
 
-Import the GitHub repo in [Vercel](https://vercel.com/new). SPA routing is configured in `vercel.json`.
+Production: **https://rhyme-reason-phi.vercel.app**
+
+Hello World check: **https://rhyme-reason-phi.vercel.app/hello**
+
+GitHub is connected for automatic deploys on push to `main`. SPA routing is in `vercel.json`.
 
 ## Content
 
