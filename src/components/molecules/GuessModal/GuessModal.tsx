@@ -15,6 +15,7 @@ import {
 } from "../RejectedTileFlyback";
 import { WordCloud } from "../WordCloud";
 import { WordDropZone } from "../WordDropZone";
+import { WordDragProvider } from "./WordDragContext";
 
 export type GuessModalProps = {
   open: boolean;
@@ -327,6 +328,20 @@ export function GuessModal({
         aria-labelledby={titleId}
         className="relative flex max-h-[90dvh] w-full max-w-[540px] min-h-0 flex-col overflow-hidden rounded-2xl border border-game-border-surface-level2 bg-slate-200 shadow-[0_12px_40px_rgba(0,0,0,0.18)]"
       >
+        <WordDragProvider
+          disabled={interactionLocked}
+          onDragStart={(source) => {
+            if (source.kind === "cloud") beginDrag();
+            else beginDragFromZone(source.zoneId);
+          }}
+          onDropOnZone={(zoneId, word) => tryPlaceWord(zoneId, word)}
+          onDropOnCloud={(word) => {
+            if (interactionLocked) return;
+            returnWord(word);
+          }}
+          onDropSuccess={markDropSucceeded}
+          onDragCancelFromZone={() => handleDragEndFromZone()}
+        >
         <header className="grid shrink-0 grid-cols-3 items-center gap-2 border-b border-game-border-surface-level1 bg-game-surface-base-level0 py-1 pl-4 pr-2">
           <Text
             as="p"
@@ -360,7 +375,7 @@ export function GuessModal({
           <p className="sr-only" aria-live="polite">
             {rejecting ? "That word doesn't fit here." : ""}
           </p>
-          <section className="rounded-t-none rounded-b-2xl bg-game-surface-base-level1 px-1 py-4">
+          <section className="select-none rounded-t-none rounded-b-2xl bg-game-surface-base-level1 px-1 py-4">
             <WordCloud
               words={cloudWords}
               solvedWords={solvedWords}
@@ -466,6 +481,7 @@ export function GuessModal({
             </Button>
           </footer>
         ) : null}
+        </WordDragProvider>
       </div>
     </div>
   );

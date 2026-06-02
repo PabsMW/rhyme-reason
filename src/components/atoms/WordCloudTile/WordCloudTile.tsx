@@ -1,12 +1,22 @@
-import type { DragEvent } from "react";
+import type { DragEvent, PointerEvent } from "react";
 import { cn } from "../../../lib/cn";
 
 export type WordCloudTileVariant = "default" | "highlighted" | "solved" | "ghost";
+
+export type WordCloudTileDragBind = {
+  onPointerDown: (event: PointerEvent<HTMLElement>) => void;
+  onPointerMove: (event: PointerEvent<HTMLElement>) => void;
+  onPointerUp: (event: PointerEvent<HTMLElement>) => void;
+  onPointerCancel: (event: PointerEvent<HTMLElement>) => void;
+};
 
 type WordCloudTileProps = {
   word: string;
   variant?: WordCloudTileVariant;
   draggable?: boolean;
+  dragBind?: WordCloudTileDragBind;
+  /** Hide source tile while a pointer drag clone is active. */
+  dragSourceHidden?: boolean;
   onDragStart?: (event: DragEvent<HTMLSpanElement>) => void;
   onDragEnd?: (event: DragEvent<HTMLSpanElement>) => void;
   className?: string;
@@ -27,19 +37,24 @@ export function WordCloudTile({
   word,
   variant = "default",
   draggable,
+  dragBind,
+  dragSourceHidden = false,
   onDragStart,
   onDragEnd,
   className,
 }: WordCloudTileProps) {
   const isGhost = variant === "ghost";
-  const interactive = draggable && !isGhost;
+  const usePointerDrag = Boolean(dragBind);
+  const useNativeDrag = draggable && !isGhost && !usePointerDrag;
+  const interactive = (draggable || usePointerDrag) && !isGhost;
 
   return (
     <span
-      draggable={interactive}
+      draggable={useNativeDrag}
       aria-hidden={isGhost || undefined}
+      {...(dragBind ?? {})}
       onDragStart={
-        interactive
+        useNativeDrag
           ? (event) => {
               event.dataTransfer.setData("text/plain", word);
               event.dataTransfer.effectAllowed = "move";
@@ -47,10 +62,12 @@ export function WordCloudTile({
             }
           : undefined
       }
-      onDragEnd={interactive ? onDragEnd : undefined}
+      onDragEnd={useNativeDrag ? onDragEnd : undefined}
       className={cn(
         "inline-flex items-center justify-center rounded-[10px] border px-2.5 py-1.5 font-sf-compact-rounded text-lg font-semibold capitalize leading-none shadow-chip transition-colors",
-        interactive && "cursor-grab active:cursor-grabbing",
+        interactive && "cursor-grab touch-none select-none active:cursor-grabbing",
+        interactive && "[-webkit-touch-callout:none]",
+        dragSourceHidden && "invisible",
         isGhost && "shadow-none",
         variantClass[variant],
         className,

@@ -2,6 +2,7 @@ import { useRef, useState, type DragEvent } from "react";
 import { Text } from "../../atoms/Text";
 import { WordCloudTile } from "../../atoms/WordCloudTile";
 import { cn } from "../../../lib/cn";
+import { useWordDrag } from "../GuessModal/WordDragContext";
 import { WordDropZoneConnectorIcon } from "./WordDropZoneConnectorIcon";
 import { WordDropZoneCorrectBadge } from "./WordDropZoneCorrectBadge";
 
@@ -83,6 +84,7 @@ export function WordDropZone({
   parallelFrameActive = false,
   className,
 }: WordDropZoneProps) {
+  const wordDrag = useWordDrag();
   const [dragOver, setDragOver] = useState(false);
   const dragDepthRef = useRef(0);
   const locked = correct && Boolean(value);
@@ -91,6 +93,15 @@ export function WordDropZone({
   const showTile = Boolean(displayValue);
   const emptyDropTarget = !locked && !showTile && !rejecting;
   const canHighlightDrop = !locked && !interactionLocked && !rejecting;
+  const pointerDragOver =
+    Boolean(wordDrag?.draggingWord) && wordDrag?.hoverTarget === zoneId;
+  const isDropHighlighted = canHighlightDrop && (dragOver || pointerDragOver);
+  const placedTileDraggable =
+    Boolean(displayValue) && !locked && !showRejectPreview && !interactionLocked;
+  const placedDragBind =
+    wordDrag && placedTileDraggable && zoneId && displayValue
+      ? wordDrag.bindTile(displayValue, { kind: "zone", zoneId })
+      : undefined;
   const frameClass = cn(
     sectionFrameClass,
     parallelFrameActive && "word-drop-zone-board--parallel-active",
@@ -184,6 +195,7 @@ export function WordDropZone({
           </Text>
         ) : null}
         <div
+          data-word-drop-zone={zoneId}
           onDragOver={handleDragOver}
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
@@ -197,14 +209,14 @@ export function WordDropZone({
             emptyDropTarget &&
               cn(
                 "border-4 border-dashed border-yellow-500 bg-game-surface-base-level2",
-                dragOver && canHighlightDrop && dragOverTargetClass,
+                isDropHighlighted && dragOverTargetClass,
               ),
             !locked &&
               showTile &&
               !rejecting &&
               cn(
                 "border-2 border-solid border-game-border-component-wordcloudtile bg-game-surface-base-level2",
-                dragOver && canHighlightDrop && dragOverTargetClass,
+                isDropHighlighted && dragOverTargetClass,
               ),
             !locked &&
               rejecting &&
@@ -235,7 +247,12 @@ export function WordDropZone({
               <WordCloudTile
                 word={displayValue}
                 variant="highlighted"
-                draggable={!interactionLocked}
+                draggable={placedTileDraggable && !placedDragBind}
+                dragBind={placedDragBind}
+                dragSourceHidden={
+                  wordDrag?.draggingWord?.toLowerCase() ===
+                  displayValue.toLowerCase()
+                }
                 onDragStart={() => onDragStart?.()}
                 onDragEnd={() => onDragEndFromZone?.()}
               />

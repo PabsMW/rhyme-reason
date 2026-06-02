@@ -1,5 +1,6 @@
 import type { DragEvent } from "react";
 import { WordCloudTile } from "../../atoms/WordCloudTile";
+import { useWordDrag } from "../GuessModal/WordDragContext";
 
 type WordCloudProps = {
   words: string[];
@@ -34,6 +35,7 @@ export function WordCloud({
   onDrop,
   onReturnWord,
 }: WordCloudProps) {
+  const wordDrag = useWordDrag();
   const canDrag = draggable && !interactionLocked;
   const flybackHiddenLower = flybackHiddenWord?.toLowerCase() ?? null;
   const solvedSet = new Set(solvedWords.map((w) => w.toLowerCase()));
@@ -69,6 +71,7 @@ export function WordCloud({
       className="flex flex-wrap items-center justify-center gap-2"
       role="list"
       aria-label="Word cloud"
+      data-word-cloud-drop={wordDrag ? true : undefined}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
@@ -83,6 +86,13 @@ export function WordCloud({
               : "default";
         const hiddenForFlyback =
           flybackHiddenLower !== null && lower === flybackHiddenLower;
+        const tileDraggable = canDrag && variant !== "ghost" && !hiddenForFlyback;
+        const dragBind =
+          wordDrag && tileDraggable
+            ? wordDrag.bindTile(word, { kind: "cloud" })
+            : undefined;
+        const dragSourceHidden =
+          wordDrag?.draggingWord?.toLowerCase() === lower;
         return (
           <span
             key={word}
@@ -92,7 +102,9 @@ export function WordCloud({
             <WordCloudTile
               word={word}
               variant={variant}
-              draggable={canDrag && variant !== "ghost" && !hiddenForFlyback}
+              draggable={tileDraggable && !dragBind}
+              dragBind={dragBind}
+              dragSourceHidden={dragSourceHidden}
               onDragStart={onDragStart}
             />
           </span>
