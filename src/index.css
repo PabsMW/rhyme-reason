@@ -10,6 +10,11 @@
     border-width: 6px;
     border-style: solid;
     border-color: var(--game-border-component-wordcloudtileboard);
+    transition: border-color 200ms ease-out;
+  }
+
+  .word-drop-zone-board--parallel-active {
+    border-color: theme("colors.blue.600");
   }
 }
 

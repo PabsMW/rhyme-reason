@@ -1,16 +1,24 @@
-import { useNavigate } from "react-router-dom";
+import { useMemo } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "../components/atoms/Button";
 import { Text } from "../components/atoms/Text";
 import { SEED_GAME } from "../data/game";
 import { clearRun, loadRun } from "../lib/gameRun";
+import { levelsToWinLabel, parseGameSettings, pathWithGameSettings } from "../lib/gameSettings";
 
 export function ResultPage() {
   const navigate = useNavigate();
-  const run = loadRun(SEED_GAME);
+  const [searchParams] = useSearchParams();
+  const gameSettings = useMemo(
+    () => parseGameSettings(searchParams.toString()),
+    [searchParams],
+  );
+  const run = loadRun(SEED_GAME, gameSettings);
+  const levelsLabel = levelsToWinLabel(run.levelsToWin);
 
   const handlePlayAgain = () => {
     clearRun();
-    navigate("/play");
+    navigate(pathWithGameSettings("/play", gameSettings));
   };
 
   return (
@@ -20,7 +28,7 @@ export function ResultPage() {
           You did it!
         </Text>
         <Text variant="body" className="mt-4">
-          All {run.solvedAnswers.length} words solved across three levels.
+          All {run.solvedAnswers.length} words solved across {levelsLabel}.
         </Text>
         <ul className="mt-6 flex flex-wrap justify-center gap-2">
           {run.solvedAnswers.map((word) => (
@@ -36,7 +44,11 @@ export function ResultPage() {
           <Button variant="primary" type="button" onClick={handlePlayAgain}>
             Play again
           </Button>
-          <Button variant="secondary" type="button" onClick={() => navigate("/")}>
+          <Button
+            variant="secondary"
+            type="button"
+            onClick={() => navigate(pathWithGameSettings("/", gameSettings))}
+          >
             Home
           </Button>
         </div>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "../components/atoms/Button";
 import { Text } from "../components/atoms/Text";
 import { GuessModal } from "../components/molecules/GuessModal";
@@ -14,10 +14,13 @@ import {
   type RunState,
 } from "../data/game";
 import { loadRun, recordMove, submitClue } from "../lib/gameRun";
+import { parseGameSettings, pathWithGameSettings } from "../lib/gameSettings";
 
 export function GamePage() {
   const navigate = useNavigate();
-  const [run, setRun] = useState<RunState>(() => loadRun(SEED_GAME));
+  const [searchParams] = useSearchParams();
+  const gameSettings = parseGameSettings(searchParams.toString());
+  const [run, setRun] = useState<RunState>(() => loadRun(SEED_GAME, gameSettings));
   const [selectedHintId, setSelectedHintId] = useState<string | null>(null);
   const [guess, setGuess] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -41,9 +44,9 @@ export function GamePage() {
 
   useEffect(() => {
     if (run.status === "won") {
-      navigate("/result", { replace: true });
+      navigate(pathWithGameSettings("/result", gameSettings), { replace: true });
     }
-  }, [run.status, navigate]);
+  }, [run.status, navigate, gameSettings]);
 
   const closeGuessModal = useCallback(() => {
     setGuessModalOpen(false);
@@ -79,17 +82,17 @@ export function GamePage() {
       closeGuessModal();
 
       if (result.complete) {
-        navigate("/result");
+        navigate(pathWithGameSettings("/result", gameSettings));
       }
     },
-    [closeGuessModal, navigate, run, selectedHintId],
+    [closeGuessModal, gameSettings, navigate, run, selectedHintId],
   );
 
   return (
     <div className="flex min-h-dvh flex-col bg-game-surface-base-level0">
       <header className="mx-auto flex w-full max-w-[540px] items-center justify-between gap-3 px-4 py-4">
         <Text as="h1" variant="subtitle" className="text-xl">
-          Level {run.level}
+          Level {run.level} of {run.levelsToWin}
         </Text>
         <Text
           variant="subtitle"
@@ -98,7 +101,12 @@ export function GamePage() {
         >
           MOVES: {run.totalMoves}
         </Text>
-        <Button variant="secondary" size="sm" type="button" onClick={() => navigate("/")}>
+        <Button
+          variant="secondary"
+          size="sm"
+          type="button"
+          onClick={() => navigate(pathWithGameSettings("/", gameSettings))}
+        >
           Home
         </Button>
       </header>
@@ -151,6 +159,7 @@ export function GamePage() {
           error={error}
           moves={run.totalMoves}
           onRecordMove={handleRecordMove}
+          solveFlow={gameSettings.solveFlow}
         />
       ) : null}
     </div>

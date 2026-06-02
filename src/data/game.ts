@@ -23,6 +23,8 @@ export type GameDefinition = {
   levels: LevelDefinition[];
 };
 
+export type LevelsToWin = 1 | 2 | 3;
+
 export type RunState = {
   gameId: string;
   level: 1 | 2 | 3;
@@ -33,6 +35,8 @@ export type RunState = {
   /** Tile drops and guess attempts across the run */
   totalMoves: number;
   status: "playing" | "won";
+  /** How many levels must be cleared before the run is won */
+  levelsToWin: LevelsToWin;
 };
 
 export type ClueSubmission = {
@@ -182,7 +186,10 @@ export function hintsRemaining(level: LevelDefinition, run: RunState): number {
   return level.hints.length - run.solvedHintIds.length;
 }
 
-export function createInitialRun(game: GameDefinition): RunState {
+export function createInitialRun(
+  game: GameDefinition,
+  levelsToWin: LevelsToWin = 3,
+): RunState {
   return {
     gameId: game.id,
     level: 1,
@@ -190,6 +197,7 @@ export function createInitialRun(game: GameDefinition): RunState {
     solvedAnswers: [],
     totalMoves: 0,
     status: "playing",
+    levelsToWin,
   };
 }
 
@@ -202,6 +210,10 @@ export function isRunState(value: unknown): value is RunState {
     Array.isArray(run.solvedHintIds) &&
     Array.isArray(run.solvedAnswers) &&
     (typeof run.totalMoves === "number" || run.totalMoves === undefined) &&
-    (run.status === "playing" || run.status === "won")
+    (run.status === "playing" || run.status === "won") &&
+    (run.levelsToWin === 1 ||
+      run.levelsToWin === 2 ||
+      run.levelsToWin === 3 ||
+      run.levelsToWin === undefined)
   );
 }

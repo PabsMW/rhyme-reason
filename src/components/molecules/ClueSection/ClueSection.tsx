@@ -9,6 +9,7 @@ export type ClueSectionProps = {
   active?: boolean;
   solved?: boolean;
   onClick?: () => void;
+  showClueLabel?: boolean;
   className?: string;
 };
 
@@ -19,6 +20,7 @@ export function ClueSection({
   active = false,
   solved = false,
   onClick,
+  showClueLabel,
   className,
 }: ClueSectionProps) {
   return (
@@ -31,6 +33,7 @@ export function ClueSection({
             active={active}
             solved={solved}
             onClick={onClick}
+            showClueLabel={showClueLabel}
           />
         </ul>
       </section>

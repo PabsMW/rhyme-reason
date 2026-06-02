@@ -4,6 +4,7 @@ import { Button } from "../../atoms/Button";
 import { Text } from "../../atoms/Text";
 import type { ClueSubmission, HintDefinition } from "../../../data/game";
 import { findCloudTileElement } from "../../../lib/findCloudTileElement";
+import type { SolveFlow } from "../../../lib/gameSettings";
 import { getRejectFallbackMs, getZoneRejectShakeMs } from "../../../lib/rejectAnimation";
 import { cn } from "../../../lib/cn";
 import { ClueSection } from "../ClueSection";
@@ -28,6 +29,7 @@ export type GuessModalProps = {
   error: string | null;
   moves: number;
   onRecordMove: () => void;
+  solveFlow?: SolveFlow;
 };
 
 type DropZoneId = "reason" | "rhymes";
@@ -44,6 +46,26 @@ const toFlybackRect = (rect: DOMRect): TileFlybackRect => ({
   height: rect.height,
 });
 
+function useSolveFlowState(
+  solveFlow: SolveFlow,
+  reasonCorrect: boolean,
+  rhymeCorrect: boolean,
+) {
+  const parallel = solveFlow === "parallel";
+
+  return {
+    rhymesUnlocked: reasonCorrect,
+    guessInputUnlocked: parallel ? reasonCorrect : rhymeCorrect,
+    guessFooterVisible: parallel ? reasonCorrect : rhymeCorrect,
+    reasonFlowFocused: !reasonCorrect,
+    rhymesFlowFocused: reasonCorrect && !rhymeCorrect,
+    guessFlowFocused: parallel
+      ? reasonCorrect && !rhymeCorrect
+      : rhymeCorrect,
+    focusGuessInput: parallel ? reasonCorrect : rhymeCorrect,
+  };
+}
+
 export function GuessModal({
   open,
   onClose,
@@ -57,6 +79,7 @@ export function GuessModal({
   error,
   moves,
   onRecordMove,
+  solveFlow = "sequential",
 }: GuessModalProps) {
   const titleId = useId();
   const guessFormId = useId();
@@ -72,6 +95,7 @@ export function GuessModal({
     from: TileFlybackRect;
     to: TileFlybackRect;
   } | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const interactionLocked = rejecting !== null;
 
@@ -80,15 +104,20 @@ export function GuessModal({
   const reasonCorrect =
     reasonWord !== null && norm(reasonWord) === norm(hint.anchorCloudWord);
   const rhymeCorrect = rhymeWord !== null && norm(rhymeWord) === norm(hint.rhymeWith);
+  const {
+    rhymesUnlocked,
+    guessInputUnlocked,
+    guessFooterVisible,
+    reasonFlowFocused,
+    rhymesFlowFocused,
+    guessFlowFocused,
+    focusGuessInput,
+  } = useSolveFlowState(solveFlow, reasonCorrect, rhymeCorrect);
   const ghostPlacedWords = [
     reasonCorrect && reasonWord ? reasonWord : null,
     rhymeCorrect && rhymeWord ? rhymeWord : null,
   ].filter((word): word is string => word !== null);
-  const rhymesUnlocked = reasonCorrect;
-  const guessUnlocked = rhymeCorrect;
-  const reasonFlowFocused = !reasonCorrect;
-  const rhymesFlowFocused = reasonCorrect && !rhymeCorrect;
-  const guessFlowFocused = rhymeCorrect;
+  const displayError = error ?? submitError;
 
   const beginDrag = useCallback(() => {
     dropSucceededRef.current = false;
@@ -190,7 +219,10 @@ export function GuessModal({
       if (reasonWord?.toLowerCase() === lower && !reasonCorrect) setReasonWord(null);
       if (rhymeWord?.toLowerCase() === lower && !rhymeCorrect) setRhymeWord(null);
       if (zone === "reason") setReasonWord(word);
-      else setRhymeWord(word);
+      else {
+        setRhymeWord(word);
+        setSubmitError(null);
+      }
       return true;
     },
     [
@@ -222,10 +254,9 @@ export function GuessModal({
 
   useEffect(() => {
     if (!open) {
-      setReasonWord(null);
-      setRhymeWord(null);
       setRejecting(null);
       setFlyback(null);
+      setSubmitError(null);
       clearRejectTimer();
     }
   }, [open, hint.id, clearRejectTimer]);
@@ -236,7 +267,14 @@ export function GuessModal({
 
   const handleSubmit = useCallback(() => {
     const trimmed = guess.trim();
-    if (!trimmed || !reasonWord || !rhymeWord) return;
+    if (!trimmed || !reasonWord) return;
+
+    if (!rhymeWord) {
+      setSubmitError("Drop a rhyme word first.");
+      return;
+    }
+
+    setSubmitError(null);
     onRecordMove();
     onSubmit({
       answer: trimmed,
@@ -264,12 +302,12 @@ export function GuessModal({
   }, [open, onClose]);
 
   useEffect(() => {
-    if (!open || !guessUnlocked) return;
+    if (!open || !focusGuessInput) return;
     const focusTimer = window.setTimeout(() => {
       panelRef.current?.querySelector<HTMLInputElement>("input")?.focus();
     }, 0);
     return () => window.clearTimeout(focusTimer);
-  }, [open, guessUnlocked]);
+  }, [open, focusGuessInput]);
 
   if (!open) return null;
 
@@ -289,12 +327,19 @@ export function GuessModal({
         aria-labelledby={titleId}
         className="relative flex max-h-[90dvh] w-full max-w-[540px] min-h-0 flex-col overflow-hidden rounded-2xl border border-game-border-surface-level2 bg-slate-200 shadow-[0_12px_40px_rgba(0,0,0,0.18)]"
       >
-        <header className="flex shrink-0 items-center justify-between gap-2 border-b border-game-border-surface-level1 bg-game-surface-base-level0 py-1 pl-4 pr-2">
+        <header className="grid shrink-0 grid-cols-3 items-center gap-2 border-b border-game-border-surface-level1 bg-game-surface-base-level0 py-1 pl-4 pr-2">
+          <Text
+            as="p"
+            variant="label"
+            className="justify-self-start text-sm uppercase text-black/40"
+          >
+            Clue {hintDisplayNumber}
+          </Text>
           <Text
             id={titleId}
             as="h2"
             variant="subtitle"
-            className="font-sf-pro-rounded text-base font-semibold"
+            className="justify-self-center text-center font-sf-pro-rounded text-base font-semibold"
             aria-live="polite"
           >
             MOVES: {moves}
@@ -305,7 +350,7 @@ export function GuessModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="w-fit !min-w-8 border-0 !px-0 enabled:hover:bg-transparent"
+            className="w-fit justify-self-end !min-w-8 border-0 !px-0 enabled:hover:bg-transparent"
           >
             <IoIosCloseCircle className="size-8" aria-hidden />
           </Button>
@@ -338,6 +383,7 @@ export function GuessModal({
             hint={hint}
             displayNumber={hintDisplayNumber}
             active
+            showClueLabel={false}
           />
 
           {flyback ? (
@@ -370,12 +416,16 @@ export function GuessModal({
 
           <GuessSection
             formId={guessFormId}
-            disabled={!guessUnlocked}
+            disabled={!guessInputUnlocked}
             flowFocused={guessFlowFocused}
+            parallelConnectorActive={solveFlow === "parallel" && reasonCorrect}
             value={guess}
-            onChange={onGuessChange}
+            onChange={(value) => {
+              onGuessChange(value);
+              if (submitError) setSubmitError(null);
+            }}
             onSubmit={handleSubmit}
-            error={error}
+            error={displayError}
           />
 
           <WordDropZone
@@ -385,6 +435,7 @@ export function GuessModal({
             correct={rhymeCorrect}
             disabled={!rhymesUnlocked}
             flowFocused={rhymesFlowFocused}
+            parallelFrameActive={solveFlow === "parallel" && reasonCorrect}
             interactionLocked={interactionLocked}
             previewWord={
               rejecting?.zone === "rhymes" && !flyback ? rejecting.word : null
@@ -397,7 +448,7 @@ export function GuessModal({
           />
         </div>
 
-        {guessUnlocked ? (
+        {guessFooterVisible ? (
           <footer
             className={cn(
               "shrink-0 animate-slide-up-footer border-t border-game-border-surface-level1",

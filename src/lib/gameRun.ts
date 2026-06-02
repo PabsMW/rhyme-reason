@@ -6,9 +6,11 @@ import {
   isRunState,
   type ClueSubmission,
   type GameDefinition,
+  type LevelsToWin,
   type RunState,
   validateClue,
 } from "../data/game";
+import { type GameSettings } from "./gameSettings";
 
 const STORAGE_KEY = "rhyme-reason-run";
 
@@ -16,20 +18,30 @@ export type GuessResult =
   | { ok: true; run: RunState; complete: boolean }
   | { ok: false; reason: "wrong" | "already_solved" };
 
-export function loadRun(game: GameDefinition): RunState {
+function normalizeRun(parsed: RunState, settings: GameSettings): RunState {
+  const levelsToWin: LevelsToWin = parsed.levelsToWin ?? settings.levelsToWin;
+  return {
+    ...parsed,
+    levelsToWin,
+    totalMoves: typeof parsed.totalMoves === "number" ? parsed.totalMoves : 0,
+  };
+}
+
+export function loadRun(game: GameDefinition, settings: GameSettings): RunState {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
-    if (!raw) return createInitialRun(game);
+    if (!raw) return createInitialRun(game, settings.levelsToWin);
     const parsed: unknown = JSON.parse(raw);
     if (!isRunState(parsed) || parsed.gameId !== game.id) {
-      return createInitialRun(game);
+      return createInitialRun(game, settings.levelsToWin);
     }
-    return {
-      ...parsed,
-      totalMoves: typeof parsed.totalMoves === "number" ? parsed.totalMoves : 0,
-    };
+    const run = normalizeRun(parsed as RunState, settings);
+    if (run.levelsToWin !== settings.levelsToWin) {
+      return createInitialRun(game, settings.levelsToWin);
+    }
+    return run;
   } catch {
-    return createInitialRun(game);
+    return createInitialRun(game, settings.levelsToWin);
   }
 }
 
@@ -81,7 +93,7 @@ export function submitClue(
     return { ok: true, run: next, complete: false };
   }
 
-  if (run.level < 3) {
+  if (run.level < run.levelsToWin) {
     const nextLevel = (run.level + 1) as 1 | 2 | 3;
     const next: RunState = {
       ...run,

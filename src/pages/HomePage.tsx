@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { FaGear } from "react-icons/fa6";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "../components/atoms/Button";
 import { Text } from "../components/atoms/Text";
 import { SEED_GAME } from "../data/game";
 import { clearRun } from "../lib/gameRun";
 import { cn } from "../lib/cn";
+import { parseGameSettings, pathWithGameSettings } from "../lib/gameSettings";
 
 type SettingsLink = {
   label: string;
@@ -13,6 +14,7 @@ type SettingsLink = {
 };
 
 const SETTINGS_LINKS: SettingsLink[] = [
+  { label: "Game settings", to: "/settings" },
   { label: "Connectivity Check", to: "/hello" },
   ...(import.meta.env.DEV
     ? [
@@ -24,6 +26,8 @@ const SETTINGS_LINKS: SettingsLink[] = [
 
 function HomeSettingsMenu() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const gameSettings = parseGameSettings(searchParams.toString());
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -49,7 +53,8 @@ function HomeSettingsMenu() {
 
   const goTo = (to: string) => {
     setOpen(false);
-    navigate(to);
+    const path = to === "/settings" ? pathWithGameSettings(to, gameSettings) : to;
+    navigate(path);
   };
 
   return (
@@ -94,10 +99,12 @@ function HomeSettingsMenu() {
 
 export function HomePage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const gameSettings = parseGameSettings(searchParams.toString());
 
   const handlePlay = () => {
     clearRun();
-    navigate("/play");
+    navigate(pathWithGameSettings("/play", gameSettings));
   };
 
   return (

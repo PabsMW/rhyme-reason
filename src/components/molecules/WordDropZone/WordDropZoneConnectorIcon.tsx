@@ -5,12 +5,15 @@ export type WordDropZoneConnectorVariant = "arrow" | "empty";
 
 type WordDropZoneConnectorIconProps = {
   variant?: WordDropZoneConnectorVariant;
+  /** Parallel mode: blue slot between Answer and Rhyme when both are active. */
+  parallelActive?: boolean;
   className?: string;
 };
 
 /** Connector between stacked sections — arrow chevron or empty slot. */
 export function WordDropZoneConnectorIcon({
   variant = "empty",
+  parallelActive = false,
   className,
 }: WordDropZoneConnectorIconProps) {
   if (variant === "arrow") {
@@ -22,5 +25,10 @@ export function WordDropZoneConnectorIcon({
     );
   }
 
-  return <Connection variant="empty" className={className} />;
+  return (
+    <Connection
+      variant="empty"
+      className={cn(parallelActive && "bg-blue-600", className)}
+    />
+  );
 }

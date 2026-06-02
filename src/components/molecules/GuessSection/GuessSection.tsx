@@ -14,6 +14,8 @@ export type GuessSectionProps = {
   disabled?: boolean;
   /** Current step in the modal flow (elevated shadow). */
   flowFocused?: boolean;
+  /** Parallel mode: blue connector while Answer and Rhyme are both active. */
+  parallelConnectorActive?: boolean;
   className?: string;
 };
 
@@ -26,6 +28,7 @@ export function GuessSection({
   showSubmitButton = false,
   disabled = false,
   flowFocused = false,
+  parallelConnectorActive = false,
   className,
 }: GuessSectionProps) {
   return (
@@ -73,7 +76,7 @@ export function GuessSection({
         )}
       </section>
       <div className="flex h-[26px] w-full justify-center leading-none">
-        <WordDropZoneConnectorIcon />
+        <WordDropZoneConnectorIcon parallelActive={parallelConnectorActive} />
       </div>
     </div>
   );

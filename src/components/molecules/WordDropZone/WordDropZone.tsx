@@ -1,4 +1,4 @@
-import { useState, type DragEvent } from "react";
+import { useRef, useState, type DragEvent } from "react";
 import { Text } from "../../atoms/Text";
 import { WordCloudTile } from "../../atoms/WordCloudTile";
 import { cn } from "../../../lib/cn";
@@ -32,6 +32,8 @@ export type WordDropZoneProps = {
   previewWord?: string | null;
   /** Shake + error border flash on the drop target. */
   rejecting?: boolean;
+  /** Parallel mode: blue 6px frame stroke while this zone is active with Answer. */
+  parallelFrameActive?: boolean;
   className?: string;
 };
 
@@ -55,6 +57,12 @@ const sectionWidthClass = (disabled: boolean, flowFocused: boolean) =>
 const sectionFrameClass =
   "word-drop-zone-board rounded-2xl bg-game-surface-component-wordcloudtileboard-default";
 
+const dropTargetTransitionClass =
+  "transition-[color,background-color,border-color,transform] duration-200 ease-out";
+
+const dragOverTargetClass =
+  "scale-[1.02] border-solid border-game-feedback-success bg-game-feedback-success/10";
+
 export function WordDropZone({
   label,
   zoneId,
@@ -72,14 +80,26 @@ export function WordDropZone({
   interactionLocked = false,
   previewWord = null,
   rejecting = false,
+  parallelFrameActive = false,
   className,
 }: WordDropZoneProps) {
   const [dragOver, setDragOver] = useState(false);
+  const dragDepthRef = useRef(0);
   const locked = correct && Boolean(value);
   const displayValue = previewWord ?? value;
   const showRejectPreview = Boolean(previewWord);
   const showTile = Boolean(displayValue);
   const emptyDropTarget = !locked && !showTile && !rejecting;
+  const canHighlightDrop = !locked && !interactionLocked && !rejecting;
+  const frameClass = cn(
+    sectionFrameClass,
+    parallelFrameActive && "word-drop-zone-board--parallel-active",
+  );
+
+  const clearDragOver = () => {
+    dragDepthRef.current = 0;
+    setDragOver(false);
+  };
 
   const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
     if (locked || interactionLocked) {
@@ -94,10 +114,23 @@ export function WordDropZone({
     setDragOver(true);
   };
 
+  const handleDragEnter = (event: DragEvent<HTMLDivElement>) => {
+    if (!canHighlightDrop) return;
+    event.preventDefault();
+    dragDepthRef.current += 1;
+    if (dragDepthRef.current === 1) setDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    if (!canHighlightDrop) return;
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+    if (dragDepthRef.current === 0) setDragOver(false);
+  };
+
   const handleDrop = (event: DragEvent<HTMLDivElement>) => {
     if (locked || interactionLocked) return;
     event.preventDefault();
-    setDragOver(false);
+    clearDragOver();
     const word = event.dataTransfer.getData("text/plain").trim();
     if (!word) return;
 
@@ -112,7 +145,7 @@ export function WordDropZone({
       <div className={cn("relative w-full px-5", className)}>
         <section
           className={cn(
-            sectionFrameClass,
+            frameClass,
             "px-4 py-0.5",
             sectionWidthClass(true, flowFocused),
             flowShadowClass(flowFocused),
@@ -138,7 +171,7 @@ export function WordDropZone({
       <section
         className={cn(
           "relative",
-          sectionFrameClass,
+          frameClass,
           "px-4 py-2.5",
           sectionWidthClass(false, flowFocused),
           flowShadowClass(flowFocused),
@@ -152,23 +185,27 @@ export function WordDropZone({
         ) : null}
         <div
           onDragOver={handleDragOver}
-          onDragEnter={handleDragOver}
-          onDragLeave={() => !locked && !interactionLocked && setDragOver(false)}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           className={cn(
-            "flex items-center justify-center rounded-xl px-4 py-1.5 transition-colors",
+            "flex items-center justify-center rounded-xl px-4 py-1.5",
+            dropTargetTransitionClass,
             !locked && "min-h-[60px]",
             locked &&
               "border border-game-border-component-wordcloudtile border-solid bg-game-surface-component-wordcloudtile-hover",
             emptyDropTarget &&
               cn(
                 "border-4 border-dashed border-yellow-500 bg-game-surface-base-level2",
-                dragOver && "bg-game-surface-action-secondary-hover",
+                dragOver && canHighlightDrop && dragOverTargetClass,
               ),
             !locked &&
               showTile &&
               !rejecting &&
-              "border-2 border-solid border-game-border-component-wordcloudtile bg-game-surface-base-level2",
+              cn(
+                "border-2 border-solid border-game-border-component-wordcloudtile bg-game-surface-base-level2",
+                dragOver && canHighlightDrop && dragOverTargetClass,
+              ),
             !locked &&
               rejecting &&
               "border-4 border-solid border-game-border-surface-level2 bg-game-surface-base-level2 motion-reduce:animate-none animate-zone-reject",

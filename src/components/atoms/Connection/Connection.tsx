@@ -13,7 +13,7 @@ export function Connection({ variant = "rhyme", className }: ConnectionProps) {
   return (
     <div
       className={cn(
-        "relative flex items-center justify-center h-[35px] w-6 shrink-0 bg-game-surface-base-level2 shadow-chip",
+        "relative flex items-center justify-center h-[35px] w-6 shrink-0 bg-game-surface-base-level2 shadow-chip transition-colors duration-200",
         className,
       )}
       aria-hidden={variant === "empty"}

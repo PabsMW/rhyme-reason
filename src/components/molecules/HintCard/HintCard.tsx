@@ -10,6 +10,8 @@ export type HintCardProps = {
   active?: boolean;
   solved?: boolean;
   onClick?: () => void;
+  /** When false, hides the "Clue N" label above the clue text. */
+  showClueLabel?: boolean;
   className?: string;
 };
 
@@ -25,15 +27,16 @@ export function HintCard({
   active = false,
   solved = false,
   onClick,
+  showClueLabel,
   className,
 }: HintCardProps) {
   const interactive = Boolean(onClick) && !solved;
-  const showClueLabel = !interactive && !solved;
+  const showLabel = showClueLabel ?? (!interactive && !solved);
   const clueLabel = `Clue ${displayNumber}`;
 
   const content = (
     <div className="flex w-full min-w-0 flex-col items-center gap-1">
-      {showClueLabel ? <p className={clueLabelClass}>{clueLabel}</p> : null}
+      {showLabel ? <p className={clueLabelClass}>{clueLabel}</p> : null}
       {solved ? (
         <p
           className={cn(
