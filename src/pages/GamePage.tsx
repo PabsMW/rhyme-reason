@@ -91,7 +91,11 @@ export function GamePage() {
   return (
     <div className="flex min-h-dvh flex-col bg-game-surface-base-level0">
       <header className="mx-auto flex w-full max-w-[540px] items-center justify-between gap-3 px-4 py-4">
-        <Text as="h1" variant="subtitle" className="text-xl">
+        <Text
+          as="h1"
+          variant="subtitle"
+          className="font-sf-compact-rounded text-base font-semibold"
+        >
           Level {run.level} of {run.levelsToWin}
         </Text>
         <Text
@@ -118,8 +122,8 @@ export function GamePage() {
         >
           <WordCloud words={cloud} solvedWords={cloudWordsUsed} />
         </section>
-        <Text variant="label" className="mb-3 block text-center">
-          Tap a clue to solve
+        <Text variant="label" className="mb-3 block text-center text-slate-500">
+          Tap any clue to solve
         </Text>
         <ul
           className="flex w-full flex-col gap-3"
