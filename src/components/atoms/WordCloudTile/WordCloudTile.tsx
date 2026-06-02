@@ -24,14 +24,14 @@ type WordCloudTileProps = {
 
 const variantClass: Record<WordCloudTileVariant, string> = {
   default:
-    "border-game-border-component-wordcloudtile bg-game-surface-component-wordcloudtile-default text-game-text-component-wordcloudtile hover:bg-game-surface-component-wordcloudtile-hover",
-  display: "border-slate-300 bg-slate-300 text-slate-950",
+    "border-2 border-dashed border-game-border-component-wordcloudtile bg-game-surface-component-wordcloudtile-default text-game-text-component-wordcloudtile hover:bg-game-surface-component-wordcloudtile-hover",
+  display: "border border-slate-300 bg-slate-300 text-slate-950",
   highlighted:
-    "border-game-border-action-primary-hover bg-game-surface-component-wordcloudtile-placed text-game-text-base-primary ring-2 ring-game-levels-1/40",
+    "border border-game-border-action-primary-hover bg-game-surface-component-wordcloudtile-placed text-game-text-base-primary ring-2 ring-game-levels-1/40",
   solved:
-    "border-game-feedback-success/40 bg-game-feedback-success/10 text-game-feedback-success",
+    "border border-game-feedback-success/40 bg-game-feedback-success/10 text-game-feedback-success",
   ghost:
-    "pointer-events-none cursor-default border-dashed border-game-border-surface-level2 bg-game-surface-base-level1 text-game-text-base-tertiary opacity-45 shadow-none",
+    "pointer-events-none cursor-default border border-dashed border-game-border-surface-level2 bg-game-surface-base-level1 text-game-text-base-tertiary opacity-45 shadow-none",
 };
 
 export function WordCloudTile({
@@ -65,7 +65,7 @@ export function WordCloudTile({
       }
       onDragEnd={useNativeDrag ? onDragEnd : undefined}
       className={cn(
-        "inline-flex items-center justify-center rounded-[10px] border px-2.5 py-2 font-sf-compact-rounded text-base font-semibold capitalize leading-none shadow-chip transition-colors",
+        "inline-flex items-center justify-center rounded-[10px] px-2.5 py-[7px] font-sf-compact-rounded text-base font-semibold capitalize leading-none shadow-chip transition-colors",
         interactive && "cursor-grab touch-none select-none active:cursor-grabbing",
         interactive && "[-webkit-touch-callout:none]",
         dragSourceHidden && "invisible",
