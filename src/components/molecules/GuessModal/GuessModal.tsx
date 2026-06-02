@@ -313,7 +313,7 @@ export function GuessModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-2.5 sm:items-center">
       <button
         type="button"
         className="absolute inset-0 bg-black/40 backdrop-blur-[10px]"

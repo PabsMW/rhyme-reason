@@ -169,7 +169,7 @@ export function WordDropZone({
           </div>
         </section>
         {showBottomConnector ? (
-          <div className="flex h-[35px] w-full justify-center leading-none">
+          <div className="flex h-[30px] w-full justify-center leading-none">
             <WordDropZoneConnectorIcon />
           </div>
         ) : null}
@@ -183,14 +183,14 @@ export function WordDropZone({
         className={cn(
           "relative",
           frameClass,
-          "px-4 py-2.5",
+          "px-4 py-2",
           sectionWidthClass(false, flowFocused),
           flowShadowClass(flowFocused),
         )}
       >
         {locked ? <WordDropZoneCorrectBadge /> : null}
         {showLabel ? (
-          <Text variant="label" className="mb-2 block text-center">
+          <Text variant="label" className="mb-1 block text-center">
             {label}
           </Text>
         ) : null}
@@ -266,7 +266,7 @@ export function WordDropZone({
       </section>
 
       {showBottomConnector ? (
-        <div className="flex h-[35px] w-full justify-center leading-none">
+        <div className="flex h-[30px] w-full justify-center leading-none">
           <WordDropZoneConnectorIcon />
         </div>
       ) : null}

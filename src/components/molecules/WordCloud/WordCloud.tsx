@@ -68,7 +68,7 @@ export function WordCloud({
 
   return (
     <div
-      className="flex flex-wrap items-center justify-center gap-2"
+      className="flex flex-wrap items-center justify-center gap-1"
       role="list"
       aria-label="Word cloud"
       data-word-cloud-drop={wordDrag ? true : undefined}

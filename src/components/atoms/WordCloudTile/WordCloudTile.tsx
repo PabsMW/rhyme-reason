@@ -64,7 +64,7 @@ export function WordCloudTile({
       }
       onDragEnd={useNativeDrag ? onDragEnd : undefined}
       className={cn(
-        "inline-flex items-center justify-center rounded-[10px] border px-2.5 py-1.5 font-sf-compact-rounded text-lg font-semibold capitalize leading-none shadow-chip transition-colors",
+        "inline-flex items-center justify-center rounded-[10px] border px-2.5 py-1.5 font-sf-compact-rounded text-base font-semibold capitalize leading-none shadow-chip transition-colors",
         interactive && "cursor-grab touch-none select-none active:cursor-grabbing",
         interactive && "[-webkit-touch-callout:none]",
         dragSourceHidden && "invisible",

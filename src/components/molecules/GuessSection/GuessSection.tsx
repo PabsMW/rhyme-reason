@@ -43,7 +43,7 @@ export function GuessSection({
               : "max-w-[300px]",
           disabled
             ? "border-6 border-solid border-white bg-game-surface-component-wordinput-disable px-2.5 py-0.5"
-            : "border border-game-border-component-wordinput-default bg-game-surface-component-wordinput-default p-4",
+            : "border border-game-border-component-wordinput-default bg-game-surface-component-wordinput-default px-4 py-2",
           flowFocused ? "shadow-flow-focus" : "shadow-flow-default",
         )}
       >
@@ -51,7 +51,7 @@ export function GuessSection({
           <div className="flex min-h-[2.25rem] items-center justify-center">
             <Text
               variant="label"
-              className="text-center !text-base font-extrabold text-game-text-component-wordinput-disable"
+              className="text-center font-extrabold text-game-text-component-wordinput-disable"
             >
               Answer
             </Text>
@@ -60,7 +60,7 @@ export function GuessSection({
           <>
             <Text
               variant="label"
-              className="mb-3 block text-center text-game-text-component-wordinput-default"
+              className="mb-1.5 block text-center text-game-text-component-wordinput-default"
             >
               Answer
             </Text>
@@ -75,7 +75,7 @@ export function GuessSection({
           </>
         )}
       </section>
-      <div className="flex h-[26px] w-full justify-center leading-none">
+      <div className="flex h-[20px] w-full justify-center leading-none">
         <WordDropZoneConnectorIcon parallelActive={parallelConnectorActive} />
       </div>
     </div>

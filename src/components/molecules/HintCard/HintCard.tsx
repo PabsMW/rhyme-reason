@@ -19,7 +19,7 @@ const clueLabelClass =
   "text-center text-sm font-semibold uppercase text-black/40";
 
 const clueTextClass =
-  "break-words text-center font-archivo text-lg font-bold leading-[1.2] tracking-[0.54px]";
+  "break-words text-center font-archivo text-base font-bold leading-[1.2] tracking-[0.54px]";
 
 export function HintCard({
   hint,
