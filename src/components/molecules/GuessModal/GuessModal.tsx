@@ -63,7 +63,7 @@ function useSolveFlowState(
       : rhymeCorrect,
     reasonFlowFocused: !reasonCorrect,
     rhymesFlowFocused: reasonCorrect && !rhymeCorrect,
-    guessFlowFocused: parallel ? reasonCorrect : rhymeCorrect,
+    guessFlowFocused: reasonCorrect,
     focusGuessInput: parallel ? reasonCorrect : rhymeCorrect,
   };
 }
@@ -450,7 +450,7 @@ export function GuessModal({
           />
 
           <WordDropZone
-            label="Rhymes"
+            label="Rhyme"
             zoneId="rhymes"
             value={rhymeWord}
             correct={rhymeCorrect}
