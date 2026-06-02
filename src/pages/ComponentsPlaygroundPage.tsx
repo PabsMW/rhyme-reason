@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { Button } from "../components/atoms/Button";
 import { Text } from "../components/atoms/Text";
-import { WordCloudTile } from "../components/atoms/WordCloudTile";
+import { ClueSection } from "../components/molecules/ClueSection";
+import { ConnectionShowcase } from "../components/molecules/ConnectionShowcase";
+import { GuessButtonShowcase } from "../components/molecules/GuessButtonShowcase";
+import { WordDropZoneShowcase } from "../components/molecules/WordDropZoneShowcase";
 import { GuessInput } from "../components/molecules/GuessInput";
 import { HintCard } from "../components/molecules/HintCard";
-import { WordCloud } from "../components/molecules/WordCloud";
+import { WordCloudTileShowcase } from "../components/molecules/WordCloudTileShowcase";
 import { SEED_GAME } from "../data/game";
 
 export function ComponentsPlaygroundPage() {
@@ -25,31 +28,28 @@ export function ComponentsPlaygroundPage() {
         </div>
       </section>
 
-      <section>
-        <Text variant="label">Word cloud tile</Text>
-        <div className="mt-2 flex gap-2">
-          <WordCloudTile word="bacteria" highlighted />
-          <WordCloudTile word="MOLD" solved />
-          <WordCloudTile word="kitchen" />
-        </div>
-      </section>
+      <GuessButtonShowcase />
 
-      <section>
-        <Text variant="label">Word cloud</Text>
-        <div className="mt-2 rounded-xl border border-game-border-surface-level2 p-4">
-          <WordCloud
-            words={level1.authoredCloudWords ?? []}
-            anchorWord="bacteria"
-            solvedWords={["MOLD"]}
-          />
-        </div>
-      </section>
+      <ConnectionShowcase />
+
+      <WordDropZoneShowcase />
+
+      <WordCloudTileShowcase />
 
       <section>
         <Text variant="label">Hint card</Text>
-        <ul className="mt-2">
-          <HintCard hint={level1.hints[0]} index={0} active solved={false} />
+        <ul className="mt-2 flex flex-col gap-3">
+          <HintCard hint={level1.hints[1]} displayNumber={2} onClick={() => undefined} />
+          <HintCard hint={level1.hints[1]} displayNumber={2} />
+          <HintCard hint={level1.hints[1]} displayNumber={2} solved />
         </ul>
+      </section>
+
+      <section>
+        <Text variant="label">Clue section</Text>
+        <div className="mt-2 rounded-xl border border-dashed border-[#1F31A9]/25 bg-game-surface-base-level1 py-4">
+          <ClueSection hint={level1.hints[0]} displayNumber={1} />
+        </div>
       </section>
 
       <section>

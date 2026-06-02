@@ -1,6 +1,21 @@
+@import "./styles/game-tokens.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  /* WordDropZone outer frame — explicit border so width/color cannot be dropped by utilities */
+  .word-drop-zone-board {
+    border-width: 6px;
+    border-style: solid;
+    border-color: var(--game-border-component-wordcloudtileboard);
+  }
+}
+
+#root {
+  @apply font-sf-compact-display;
+}
 
 body {
   @apply m-0 min-h-dvh bg-game-surface-base-level0 antialiased text-game-text-base-primary;

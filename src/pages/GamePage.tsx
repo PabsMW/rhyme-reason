@@ -2,34 +2,42 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../components/atoms/Button";
 import { Text } from "../components/atoms/Text";
-import { GuessInput } from "../components/molecules/GuessInput";
+import { GuessModal } from "../components/molecules/GuessModal";
 import { HintCard } from "../components/molecules/HintCard";
 import { WordCloud } from "../components/molecules/WordCloud";
 import {
   SEED_GAME,
   activeCloud,
-  createInitialRun,
   getLevel,
+  usedCloudWords,
+  type ClueSubmission,
   type RunState,
 } from "../data/game";
-import { clearRun, loadRun, saveRun, submitGuess } from "../lib/gameRun";
-import { cn } from "../lib/cn";
-
-const LEVEL_BAR: Record<1 | 2 | 3, string> = {
-  1: "bg-game-levels-1",
-  2: "bg-game-levels-2",
-  3: "bg-game-levels-3",
-};
+import { loadRun, recordMove, submitClue } from "../lib/gameRun";
 
 export function GamePage() {
   const navigate = useNavigate();
   const [run, setRun] = useState<RunState>(() => loadRun(SEED_GAME));
+  const [selectedHintId, setSelectedHintId] = useState<string | null>(null);
   const [guess, setGuess] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [guessModalOpen, setGuessModalOpen] = useState(false);
 
   const levelDef = useMemo(() => getLevel(SEED_GAME, run.level), [run.level]);
-  const cloud = useMemo(() => activeCloud(levelDef, run), [levelDef, run]);
-  const activeHint = levelDef.hints[run.hintIndex];
+  const cloud = useMemo(() => activeCloud(SEED_GAME, levelDef), [levelDef]);
+  const cloudWordsUsed = useMemo(
+    () => usedCloudWords(levelDef, run.solvedHintIds),
+    [levelDef, run.solvedHintIds],
+  );
+  const activeHint = useMemo(
+    () => levelDef.hints.find((h) => h.id === selectedHintId),
+    [levelDef.hints, selectedHintId],
+  );
+  const hintDisplayNumber = useMemo(() => {
+    if (!selectedHintId) return 1;
+    const idx = levelDef.hints.findIndex((h) => h.id === selectedHintId);
+    return idx >= 0 ? idx + 1 : 1;
+  }, [levelDef.hints, selectedHintId]);
 
   useEffect(() => {
     if (run.status === "won") {
@@ -37,33 +45,45 @@ export function GamePage() {
     }
   }, [run.status, navigate]);
 
-  const handleGuess = useCallback(() => {
-    const trimmed = guess.trim();
-    if (!trimmed) return;
-
-    const result = submitGuess(run, trimmed);
-    if (!result.ok) {
-      setError("Not quite — try another word.");
-      return;
-    }
-
-    setError(null);
-    setGuess("");
-    setRun(result.run);
-
-    if (result.complete) {
-      navigate("/result");
-    }
-  }, [guess, navigate, run]);
-
-  const handleReset = () => {
-    clearRun();
-    const initial = createInitialRun(SEED_GAME);
-    saveRun(initial);
-    setRun(initial);
+  const closeGuessModal = useCallback(() => {
+    setGuessModalOpen(false);
+    setSelectedHintId(null);
     setGuess("");
     setError(null);
-  };
+  }, []);
+
+  const openGuessModal = useCallback((hintId: string) => {
+    setSelectedHintId(hintId);
+    setGuess("");
+    setError(null);
+    setGuessModalOpen(true);
+  }, []);
+
+  const handleRecordMove = useCallback(() => {
+    setRun((prev) => recordMove(prev));
+  }, []);
+
+  const handleSubmit = useCallback(
+    (submission: ClueSubmission) => {
+      if (!selectedHintId) return;
+
+      const result = submitClue(run, selectedHintId, submission);
+      if (!result.ok) {
+        setError("Wrong answer");
+        return;
+      }
+
+      setError(null);
+      setGuess("");
+      setRun(result.run);
+      closeGuessModal();
+
+      if (result.complete) {
+        navigate("/result");
+      }
+    },
+    [closeGuessModal, navigate, run, selectedHintId],
+  );
 
   return (
     <div className="flex min-h-dvh flex-col bg-game-surface-base-level0">
@@ -71,8 +91,12 @@ export function GamePage() {
         <Text as="h1" variant="subtitle" className="text-xl">
           Level {run.level}
         </Text>
-        <Text variant="caption">
-          {run.solvedAll.length} / 7 solved
+        <Text
+          variant="subtitle"
+          className="font-sf-pro-rounded text-base font-semibold"
+          aria-live="polite"
+        >
+          MOVES: {run.totalMoves}
         </Text>
         <Button variant="secondary" size="sm" type="button" onClick={() => navigate("/")}>
           Home
@@ -80,65 +104,55 @@ export function GamePage() {
       </header>
 
       <div className="mx-auto w-full max-w-[540px] flex-1 px-4 pb-8">
-        <div
-          className={cn("mb-4 h-2 w-full rounded-full", LEVEL_BAR[run.level])}
-          role="progressbar"
-          aria-valuenow={run.level}
-          aria-valuemin={1}
-          aria-valuemax={3}
-        />
-
-        <section className="rounded-2xl border border-game-border-surface-level2 bg-game-surface-base-level1 p-4">
-          <Text variant="label" className="mb-3 block text-center">
-            Word cloud
-          </Text>
-          <WordCloud
-            words={cloud}
-            anchorWord={activeHint?.anchorCloudWord}
-            solvedWords={run.solvedThisLevel}
-          />
+        <section
+          className="mb-4 rounded-2xl bg-game-surface-base-level1 px-1 py-4"
+          aria-label="Available words"
+        >
+          <WordCloud words={cloud} solvedWords={cloudWordsUsed} />
         </section>
-
-        <section className="mt-4">
-          <Text variant="label" className="mb-2 block">
-            Hints
-          </Text>
-          <ul className="flex flex-col gap-2">
-            {levelDef.hints.map((hint, idx) => (
+        <Text variant="label" className="mb-3 block text-center">
+          Tap a clue to solve
+        </Text>
+        <ul
+          className="flex w-full flex-col gap-3"
+          role="group"
+          aria-label="Clues"
+        >
+          {levelDef.hints.map((hint, index) => {
+            const solved = run.solvedHintIds.includes(hint.id);
+            return (
               <HintCard
                 key={hint.id}
                 hint={hint}
-                index={idx}
-                active={idx === run.hintIndex}
-                solved={idx < run.hintIndex}
+                displayNumber={index + 1}
+                solved={solved}
+                active={selectedHintId === hint.id && guessModalOpen}
+                onClick={solved ? undefined : () => openGuessModal(hint.id)}
               />
-            ))}
-          </ul>
-        </section>
-
-        <section className="mt-6">
-          <GuessInput
-            value={guess}
-            onChange={(v) => {
-              setGuess(v);
-              if (error) setError(null);
-            }}
-            onSubmit={handleGuess}
-            error={error}
-          />
-        </section>
-
-        {import.meta.env.DEV ? (
-          <div className="mt-6 flex flex-wrap gap-2">
-            <Button variant="secondary" size="sm" type="button" onClick={handleReset}>
-              Reset run
-            </Button>
-            <Button variant="secondary" size="sm" type="button" onClick={() => navigate("/playground")}>
-              Playground
-            </Button>
-          </div>
-        ) : null}
+            );
+          })}
+        </ul>
       </div>
+
+      {activeHint ? (
+        <GuessModal
+          open={guessModalOpen}
+          onClose={closeGuessModal}
+          hint={activeHint}
+          hintDisplayNumber={hintDisplayNumber}
+          cloudWords={cloud}
+          solvedWords={cloudWordsUsed}
+          guess={guess}
+          onGuessChange={(value) => {
+            setGuess(value);
+            if (error) setError(null);
+          }}
+          onSubmit={handleSubmit}
+          error={error}
+          moves={run.totalMoves}
+          onRecordMove={handleRecordMove}
+        />
+      ) : null}
     </div>
   );
 }

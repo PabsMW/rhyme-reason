@@ -1,25 +1,33 @@
 import {
   createInitialRun,
+  getAnswerForHint,
   getGameById,
   getLevel,
+  isRunState,
+  type ClueSubmission,
   type GameDefinition,
   type RunState,
-  validateGuess,
+  validateClue,
 } from "../data/game";
 
 const STORAGE_KEY = "rhyme-reason-run";
 
 export type GuessResult =
   | { ok: true; run: RunState; complete: boolean }
-  | { ok: false; reason: "wrong" };
+  | { ok: false; reason: "wrong" | "already_solved" };
 
 export function loadRun(game: GameDefinition): RunState {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return createInitialRun(game);
-    const parsed = JSON.parse(raw) as RunState;
-    if (parsed.gameId !== game.id) return createInitialRun(game);
-    return parsed;
+    const parsed: unknown = JSON.parse(raw);
+    if (!isRunState(parsed) || parsed.gameId !== game.id) {
+      return createInitialRun(game);
+    }
+    return {
+      ...parsed,
+      totalMoves: typeof parsed.totalMoves === "number" ? parsed.totalMoves : 0,
+    };
   } catch {
     return createInitialRun(game);
   }
@@ -29,32 +37,45 @@ export function saveRun(run: RunState): void {
   sessionStorage.setItem(STORAGE_KEY, JSON.stringify(run));
 }
 
+export function recordMove(run: RunState): RunState {
+  const next: RunState = { ...run, totalMoves: run.totalMoves + 1 };
+  saveRun(next);
+  return next;
+}
+
 export function clearRun(): void {
   sessionStorage.removeItem(STORAGE_KEY);
 }
 
-export function submitGuess(run: RunState, guess: string): GuessResult {
+export function submitClue(
+  run: RunState,
+  hintId: string,
+  submission: ClueSubmission,
+): GuessResult {
   const game = getGameById(run.gameId);
   if (!game || run.status === "won") {
     return { ok: false, reason: "wrong" };
   }
 
+  if (run.solvedHintIds.includes(hintId)) {
+    return { ok: false, reason: "already_solved" };
+  }
+
   const level = getLevel(game, run.level);
-  if (!validateGuess(level, run, guess)) {
+  if (!validateClue(level, hintId, submission)) {
     return { ok: false, reason: "wrong" };
   }
 
-  const answer = level.answers[run.hintIndex];
-  const nextHintIndex = run.hintIndex + 1;
-  const solvedThisLevel = [...run.solvedThisLevel, answer];
-  const solvedAll = [...run.solvedAll, answer];
+  const answer = getAnswerForHint(level, hintId);
+  const solvedHintIds = [...run.solvedHintIds, hintId];
+  const solvedAnswers = [...run.solvedAnswers, answer];
+  const levelComplete = solvedHintIds.length === level.hints.length;
 
-  if (nextHintIndex < level.answers.length) {
+  if (!levelComplete) {
     const next: RunState = {
       ...run,
-      hintIndex: nextHintIndex,
-      solvedThisLevel,
-      solvedAll,
+      solvedHintIds,
+      solvedAnswers,
     };
     saveRun(next);
     return { ok: true, run: next, complete: false };
@@ -65,9 +86,8 @@ export function submitGuess(run: RunState, guess: string): GuessResult {
     const next: RunState = {
       ...run,
       level: nextLevel,
-      hintIndex: 0,
-      solvedThisLevel: [],
-      solvedAll,
+      solvedHintIds: [],
+      solvedAnswers,
     };
     saveRun(next);
     return { ok: true, run: next, complete: false };
@@ -75,9 +95,8 @@ export function submitGuess(run: RunState, guess: string): GuessResult {
 
   const won: RunState = {
     ...run,
-    hintIndex: nextHintIndex,
-    solvedThisLevel,
-    solvedAll,
+    solvedHintIds,
+    solvedAnswers,
     status: "won",
   };
   saveRun(won);

@@ -1,0 +1,67 @@
+/**
+ * Game design tokens as CSS custom properties.
+ * Cursor's browser design sidebar discovers these for the "Search tokens" picker.
+ * Tailwind utilities in tailwind.config.js reference these variables.
+ */
+:root {
+  /* Surface */
+  --game-surface-base-level0: #f8fafc;
+  --game-surface-base-level1: #e2e8f0;
+  --game-surface-base-level2: #ffffff;
+  --game-surface-action-primary-default: #3A51EB;
+  --game-surface-action-primary-hover: #3B82F6;
+  --game-surface-action-primary-press: #2d6ed7;
+  --game-shadow-action-primary-depth: #0b1970;
+  --game-surface-action-secondary-hover: #f9f2d9;
+
+  /* Text */
+  --game-text-base-primary: #020617;
+  --game-text-base-secondary: #94a3b8; /* slate-400 */
+  --game-text-base-tertiary: #8f8473;
+  --game-text-inverse: #ffffff;
+
+  /* Border */
+  --game-border-surface-level1: #efebe1;
+  --game-border-surface-level2: #e1d9c6;
+  --game-border-action-primary-default: #94a3b8; /* slate-400 */
+  --game-border-action-primary-hover: #44370a;
+
+  /* Level accents */
+  --game-levels-1: #39d9c4;
+  --game-levels-2: #ffd400;
+  --game-levels-3: #fe6023;
+
+  /* Feedback */
+  --game-feedback-error: #c44b2a;
+  --game-feedback-success: #2a8f5c;
+
+  /* Component: wordcloudtile (Tailwind yellow / slate scale) */
+  --game-surface-component-wordcloudtile-default: #fef9c3; /* yellow-100 */
+  --game-surface-component-wordcloudtile-hover: #fefce8; /* yellow-50 */
+  --game-surface-component-wordcloudtile-placed: #fde047; /* yellow-300 */
+
+  /* Component: wordcloudtileboard */
+  --game-surface-component-wordcloudtileboard-default: #fef08a; /* yellow-200 */
+  --game-border-component-wordcloudtileboard: #ffffff;
+
+  /* Component: word input (guess section) */
+  --game-surface-component-wordinput-default: #1d4ed8; /* blue-700 */
+  --game-surface-component-wordinput-disable: #bcbfd4;
+  --game-border-component-wordinput-default: #1d4ed8; /* blue-700 */
+  --game-border-component-wordinput-disable: #bcbfd4;
+  --game-text-component-wordinput-default: #ffffff;
+  --game-text-component-wordinput-disable: #ffffff;
+
+  --game-border-component-wordcloudtile: #fde047; /* yellow-300 */
+  --game-text-component-wordcloudtile: #020617; /* slate-950 */
+
+  /* Component: question / hint card */
+  --game-text-component-question-solved: #ca8a04; /* yellow-600 */
+  --game-shadow-component-question-active: #eab308; /* yellow-500 */
+  --game-shadow-component-question-default: #fde047; /* yellow-300 */
+
+  /* Component: modal flow step (reason → rhymes → guess) */
+  --game-shadow-component-flow-focus: 0 20px 10px 0 rgba(24, 24, 24, 0.3);
+  --game-shadow-component-flow-default:
+    0 1px 1px 0 rgba(0, 0, 0, 0.06), 0 1px 2px 0 rgba(0, 0, 0, 0.1);
+}

@@ -20,10 +20,10 @@ export function ResultPage() {
           You did it!
         </Text>
         <Text variant="body" className="mt-4">
-          All {run.solvedAll.length} words solved across three levels.
+          All {run.solvedAnswers.length} words solved across three levels.
         </Text>
         <ul className="mt-6 flex flex-wrap justify-center gap-2">
-          {run.solvedAll.map((word) => (
+          {run.solvedAnswers.map((word) => (
             <li
               key={word}
               className="rounded-full border border-game-border-surface-level2 bg-game-surface-base-level2 px-3 py-1 font-georgia text-lg"

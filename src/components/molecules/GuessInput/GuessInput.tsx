@@ -8,6 +8,9 @@ type GuessInputProps = {
   onSubmit: () => void;
   disabled?: boolean;
   error?: string | null;
+  /** When false, use an external submit button via `formId`. */
+  showSubmitButton?: boolean;
+  formId?: string;
   className?: string;
 };
 
@@ -17,6 +20,8 @@ export function GuessInput({
   onSubmit,
   disabled,
   error,
+  showSubmitButton = true,
+  formId,
   className,
 }: GuessInputProps) {
   const inputId = useId();
@@ -28,11 +33,15 @@ export function GuessInput({
   };
 
   return (
-    <form onSubmit={handleSubmit} className={cn("flex w-full flex-col gap-2", className)}>
+    <form
+      id={formId}
+      onSubmit={handleSubmit}
+      className={cn("flex w-full flex-col gap-2", className)}
+    >
       <label htmlFor={inputId} className="sr-only">
         Your guess
       </label>
-      <div className="flex gap-2">
+      <div className={cn("flex gap-2", !showSubmitButton && "flex-col")}>
         <input
           id={inputId}
           type="text"
@@ -43,20 +52,27 @@ export function GuessInput({
           disabled={disabled}
           aria-invalid={!!error}
           aria-describedby={error ? errorId : undefined}
-          placeholder="Type your guess"
+          placeholder="ANSWER"
           className={cn(
-            "min-w-0 flex-1 rounded-full border border-game-border-surface-level2 bg-game-surface-base-level2 px-4 py-3 font-georgia text-xl uppercase tracking-wide outline-none transition-colors",
-            "focus:border-game-border-action-primary-hover focus:ring-2 focus:ring-game-border-action-primary-hover/30",
+            "min-w-0 flex-1 rounded-lg border border-blue-800 bg-blue-800 px-4 py-3 text-center font-sf-pro text-xl font-semibold uppercase tracking-wide text-white outline-none transition-colors",
+            "placeholder:text-white/60",
+            "focus:border-white focus:ring-2 focus:ring-blue-400",
             error && "border-game-feedback-error",
           )}
           onChange={(e) => onChange(e.target.value)}
         />
-        <Button type="submit" variant="primary" disabled={disabled || !value.trim()}>
-          Guess
-        </Button>
+        {showSubmitButton ? (
+          <Button type="submit" variant="primary" disabled={disabled || !value.trim()}>
+            Guess
+          </Button>
+        ) : null}
       </div>
       {error ? (
-        <p id={errorId} role="alert" className="text-center font-inter text-sm text-game-feedback-error">
+        <p
+          id={errorId}
+          role="alert"
+          className="rounded bg-game-feedback-error py-1 text-center font-sf-compact-display text-base font-semibold leading-none text-white"
+        >
           {error}
         </p>
       ) : null}

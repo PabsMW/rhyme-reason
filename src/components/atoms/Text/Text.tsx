@@ -8,10 +8,10 @@ type TextProps = HTMLAttributes<HTMLParagraphElement> & {
 };
 
 const variantClass: Record<NonNullable<TextProps["variant"]>, string> = {
-  title: "font-gidugu text-4xl leading-none text-game-text-base-primary",
-  subtitle: "font-gidugu text-2xl leading-tight text-game-text-base-secondary",
+  title: "font-archivo text-4xl leading-none text-game-text-base-primary",
+  subtitle: "font-archivo text-2xl leading-tight text-game-text-base-secondary",
   body: "font-inter text-base leading-relaxed text-game-text-base-primary",
-  label: "font-georgia text-sm font-semibold uppercase tracking-wide text-game-text-base-tertiary",
+  label: "font-sf-pro text-sm font-semibold uppercase tracking-wide text-game-text-base-tertiary",
   caption: "font-inter text-sm text-game-text-base-tertiary",
 };
 

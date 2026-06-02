@@ -1,1 +1,1 @@
-export { WordCloudTile } from "./WordCloudTile";
+export { WordCloudTile, type WordCloudTileVariant } from "./WordCloudTile";

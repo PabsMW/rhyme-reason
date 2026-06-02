@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { AppLayout } from "./components/layouts/AppLayout";
 import { ComponentsPlaygroundPage } from "./pages/ComponentsPlaygroundPage";
+import { StyleGuidePage } from "./pages/StyleGuidePage";
 import { GamePage } from "./pages/GamePage";
 import { HelloWorldPage } from "./pages/HelloWorldPage";
 import { HomePage } from "./pages/HomePage";
@@ -19,6 +20,14 @@ export default function App() {
           element={
             <AppLayout>
               <ComponentsPlaygroundPage />
+            </AppLayout>
+          }
+        />
+        <Route
+          path="/style-guide"
+          element={
+            <AppLayout>
+              <StyleGuidePage />
             </AppLayout>
           }
         />
