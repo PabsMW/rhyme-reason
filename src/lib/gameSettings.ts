@@ -72,3 +72,7 @@ export function solveFlowDescription(flow: SolveFlow): string {
     ? "Reason, then Rhyme, then Guess"
     : "Reason, then Rhyme and Guess together";
 }
+
+export function gameSettingsSummary(settings: GameSettings): string {
+  return `${solveFlowLabel(settings.solveFlow)} : ${levelsToWinLabel(settings.levelsToWin)}`;
+}

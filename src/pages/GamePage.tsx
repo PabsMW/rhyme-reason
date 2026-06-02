@@ -113,7 +113,7 @@ export function GamePage() {
 
       <div className="mx-auto w-full max-w-[540px] flex-1 px-4 pb-8">
         <section
-          className="mb-4 rounded-2xl bg-game-surface-base-level1 px-1 py-4"
+          className="mb-4 rounded-2xl px-1 py-4"
           aria-label="Available words"
         >
           <WordCloud words={cloud} solvedWords={cloudWordsUsed} />

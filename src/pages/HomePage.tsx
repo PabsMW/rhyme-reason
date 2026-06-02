@@ -6,7 +6,11 @@ import { Text } from "../components/atoms/Text";
 import { SEED_GAME } from "../data/game";
 import { clearRun } from "../lib/gameRun";
 import { cn } from "../lib/cn";
-import { parseGameSettings, pathWithGameSettings } from "../lib/gameSettings";
+import {
+  gameSettingsSummary,
+  parseGameSettings,
+  pathWithGameSettings,
+} from "../lib/gameSettings";
 
 type SettingsLink = {
   label: string;
@@ -115,6 +119,9 @@ export function HomePage() {
       <div className="mx-auto flex w-full max-w-[540px] flex-1 flex-col items-center justify-center px-4 pb-10 text-center">
         <Text as="h1" variant="title">
           {SEED_GAME.title}
+        </Text>
+        <Text className="mt-2 font-sf-pro-rounded text-sm text-slate-500">
+          {gameSettingsSummary(gameSettings)}
         </Text>
         <Button
           variant="primary"

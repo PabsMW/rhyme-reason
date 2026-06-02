@@ -19,7 +19,7 @@ const clueLabelClass =
   "text-center text-sm font-semibold uppercase text-black/40";
 
 const clueTextClass =
-  "break-words text-center font-archivo text-base font-bold leading-[1.2] tracking-[0.54px]";
+  "break-words text-center font-sf-pro-rounded text-lg font-semibold leading-[1.2] tracking-[0.54px]";
 
 export function HintCard({
   hint,
@@ -55,7 +55,7 @@ export function HintCard({
   );
 
   const sharedClass = cn(
-    "flex w-full min-h-[4.5rem] flex-col items-center justify-center rounded-lg px-3.5 py-3.5 transition-[transform,box-shadow,background-color] duration-150",
+    "flex w-full min-h-[4.5rem] flex-col items-center justify-center rounded-lg px-2.5 py-3.5 transition-[transform,box-shadow,background-color] duration-150",
     solved &&
       "border border-game-border-component-wordcloudtile bg-game-surface-component-wordcloudtile-hover",
     interactive &&

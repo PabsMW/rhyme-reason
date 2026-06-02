@@ -5,6 +5,7 @@ import { SEED_GAME } from "../../../data/game";
 
 const VARIANTS: { variant: WordCloudTileVariant; label: string; word: string }[] = [
   { variant: "default", label: "Default", word: "kitchen" },
+  { variant: "display", label: "Display", word: "SETTLE" },
   { variant: "highlighted", label: "Highlighted", word: "bacteria" },
   { variant: "solved", label: "Solved", word: "MOLD" },
   { variant: "ghost", label: "Ghost", word: "scold" },

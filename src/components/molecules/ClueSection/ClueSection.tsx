@@ -24,7 +24,7 @@ export function ClueSection({
   className,
 }: ClueSectionProps) {
   return (
-    <div className={cn("relative w-full px-5", className)}>
+    <div className={cn("relative w-full px-2.5", className)}>
       <section className="w-full rounded-2xl border border-game-border-surface-level2 bg-game-surface-base-level1 px-0 pt-0 pb-1.5">
         <ul className="w-full">
           <HintCard

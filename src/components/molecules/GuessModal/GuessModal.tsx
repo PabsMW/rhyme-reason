@@ -51,18 +51,19 @@ function useSolveFlowState(
   solveFlow: SolveFlow,
   reasonCorrect: boolean,
   rhymeCorrect: boolean,
+  guessFilled: boolean,
 ) {
   const parallel = solveFlow === "parallel";
 
   return {
     rhymesUnlocked: reasonCorrect,
     guessInputUnlocked: parallel ? reasonCorrect : rhymeCorrect,
-    guessFooterVisible: parallel ? reasonCorrect : rhymeCorrect,
+    guessFooterVisible: parallel
+      ? rhymeCorrect && guessFilled
+      : rhymeCorrect,
     reasonFlowFocused: !reasonCorrect,
     rhymesFlowFocused: reasonCorrect && !rhymeCorrect,
-    guessFlowFocused: parallel
-      ? reasonCorrect && !rhymeCorrect
-      : rhymeCorrect,
+    guessFlowFocused: parallel ? reasonCorrect : rhymeCorrect,
     focusGuessInput: parallel ? reasonCorrect : rhymeCorrect,
   };
 }
@@ -113,7 +114,12 @@ export function GuessModal({
     rhymesFlowFocused,
     guessFlowFocused,
     focusGuessInput,
-  } = useSolveFlowState(solveFlow, reasonCorrect, rhymeCorrect);
+  } = useSolveFlowState(
+    solveFlow,
+    reasonCorrect,
+    rhymeCorrect,
+    guess.trim().length > 0,
+  );
   const ghostPlacedWords = [
     reasonCorrect && reasonWord ? reasonWord : null,
     rhymeCorrect && rhymeWord ? rhymeWord : null,

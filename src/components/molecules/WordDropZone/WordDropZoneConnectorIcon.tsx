@@ -26,9 +26,6 @@ export function WordDropZoneConnectorIcon({
   }
 
   return (
-    <Connection
-      variant="empty"
-      className={cn(parallelActive && "bg-blue-600", className)}
-    />
+    <Connection variant="empty" parallelActive={parallelActive} className={className} />
   );
 }

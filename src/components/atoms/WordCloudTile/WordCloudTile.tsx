@@ -1,7 +1,7 @@
 import type { DragEvent, PointerEvent } from "react";
 import { cn } from "../../../lib/cn";
 
-export type WordCloudTileVariant = "default" | "highlighted" | "solved" | "ghost";
+export type WordCloudTileVariant = "default" | "display" | "highlighted" | "solved" | "ghost";
 
 export type WordCloudTileDragBind = {
   onPointerDown: (event: PointerEvent<HTMLElement>) => void;
@@ -25,6 +25,7 @@ type WordCloudTileProps = {
 const variantClass: Record<WordCloudTileVariant, string> = {
   default:
     "border-game-border-component-wordcloudtile bg-game-surface-component-wordcloudtile-default text-game-text-component-wordcloudtile hover:bg-game-surface-component-wordcloudtile-hover",
+  display: "border-slate-300 bg-slate-300 text-slate-950",
   highlighted:
     "border-game-border-action-primary-hover bg-game-surface-component-wordcloudtile-placed text-game-text-base-primary ring-2 ring-game-levels-1/40",
   solved:

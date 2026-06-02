@@ -83,7 +83,9 @@ export function WordCloud({
             ? "solved"
             : anchorWord?.toLowerCase() === lower
               ? "highlighted"
-              : "default";
+              : canDrag
+                ? "default"
+                : "display";
         const hiddenForFlyback =
           flybackHiddenLower !== null && lower === flybackHiddenLower;
         const tileDraggable = canDrag && variant !== "ghost" && !hiddenForFlyback;

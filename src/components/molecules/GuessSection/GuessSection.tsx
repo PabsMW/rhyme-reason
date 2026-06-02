@@ -58,12 +58,14 @@ export function GuessSection({
           </div>
         ) : (
           <>
-            <Text
-              variant="label"
-              className="mb-1.5 block text-center text-game-text-component-wordinput-default"
-            >
-              Answer
-            </Text>
+            {!flowFocused ? (
+              <Text
+                variant="label"
+                className="mb-1.5 block text-center text-game-text-component-wordinput-default"
+              >
+                Answer
+              </Text>
+            ) : null}
             <GuessInput
               formId={formId}
               showSubmitButton={showSubmitButton}

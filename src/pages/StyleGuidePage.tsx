@@ -174,6 +174,7 @@ export function StyleGuidePage() {
           <WordCloudTile word="bacteria" variant="highlighted" />
           <WordCloudTile word="MOLD" variant="solved" />
           <WordCloudTile word="kitchen" />
+          <WordCloudTile word="SETTLE" variant="display" />
           <WordCloudTile word="scold" variant="ghost" />
         </div>
       </Section>
