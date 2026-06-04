@@ -10,6 +10,7 @@ export type ClueSectionProps = {
   solved?: boolean;
   onClick?: () => void;
   showClueLabel?: boolean;
+  showBottomConnector?: boolean;
   className?: string;
 };
 
@@ -21,11 +22,12 @@ export function ClueSection({
   solved = false,
   onClick,
   showClueLabel,
+  showBottomConnector = true,
   className,
 }: ClueSectionProps) {
   return (
     <div className={cn("relative w-full px-2.5", className)}>
-      <section className="w-full rounded-2xl border border-game-border-surface-level2 bg-game-surface-base-level1 px-0 pt-0 pb-1.5">
+      <section className="mb-4 w-full rounded-2xl border border-game-border-action-primary-default bg-game-surface-base-level1 px-0 pt-0 pb-2">
         <ul className="w-full">
           <HintCard
             hint={hint}
@@ -37,9 +39,11 @@ export function ClueSection({
           />
         </ul>
       </section>
-      <div className="flex h-[26px] w-full justify-center leading-none">
-        <WordDropZoneConnectorIcon variant="arrow" />
-      </div>
+      {showBottomConnector ? (
+        <div className="flex h-[26px] w-full justify-center leading-none">
+          <WordDropZoneConnectorIcon variant="arrow" />
+        </div>
+      ) : null}
     </div>
   );
 }

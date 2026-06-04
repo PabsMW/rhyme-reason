@@ -78,6 +78,19 @@ export function WordDropZoneShowcase() {
           />
         </div>
 
+        <div className="mt-6 border-t border-game-border-surface-level1 px-4 pt-6">
+          <Text variant="caption" className="mb-3 block">
+            Guess (disabled, Parallel 2.0 blue frame)
+          </Text>
+          <GuessSection
+            disabled
+            parallelFrameActive
+            value=""
+            onChange={() => undefined}
+            onSubmit={() => undefined}
+          />
+        </div>
+
         <div className="mt-8 border-t border-game-border-surface-level1 px-4 pt-6">
           <Text variant="caption" className="mb-3 block">
             Interactive (same shared component as the guess modal)

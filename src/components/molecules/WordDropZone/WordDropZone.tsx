@@ -1,12 +1,20 @@
 import { useRef, useState, type DragEvent } from "react";
+import { AnimatedConnectionBridge } from "../../atoms/Connection";
 import { Text } from "../../atoms/Text";
 import { WordCloudTile } from "../../atoms/WordCloudTile";
 import { cn } from "../../../lib/cn";
 import { useWordDrag } from "../GuessModal/WordDragContext";
 import { WordDropZoneConnectorIcon } from "./WordDropZoneConnectorIcon";
-import { WordDropZoneCorrectBadge } from "./WordDropZoneCorrectBadge";
+import {
+  WordDropZoneCorrectBadge,
+  type WordDropZoneCorrectBadgeTone,
+} from "./WordDropZoneCorrectBadge";
 
 export type WordDropZoneId = "reason" | "rhymes";
+export type WordDropZoneBottomConnector =
+  | "empty"
+  | "wide-not-connected"
+  | "wide-connected";
 
 export type WordDropZoneProps = {
   label: string;
@@ -19,10 +27,13 @@ export type WordDropZoneProps = {
   onDropSuccess?: () => void;
   onDragEndFromZone?: () => void;
   showBottomConnector?: boolean;
+  bottomConnectorVariant?: WordDropZoneBottomConnector;
   /** Collapses the drop target; only `label` is shown (e.g. "Rhyme"). */
   disabled?: boolean;
   /** Correct word locked in place with a success checkmark. */
   correct?: boolean;
+  /** Tone of the locked-in correct checkmark badge. */
+  correctBadgeTone?: WordDropZoneCorrectBadgeTone;
   /** Current step in the modal flow (elevated shadow). */
   flowFocused?: boolean;
   /** When false, the uppercase label above the drop target is not shown. */
@@ -41,7 +52,9 @@ export type WordDropZoneProps = {
 const flowShadowClass = (flowFocused: boolean) =>
   cn(
     "transition-shadow duration-200",
-    flowFocused ? "shadow-flow-focus" : "shadow-flow-default",
+    flowFocused
+      ? "word-drop-zone-board--flow-focused"
+      : "shadow-flow-default",
   );
 
 const sectionWidthClass = (disabled: boolean, flowFocused: boolean) =>
@@ -64,6 +77,27 @@ const dropTargetTransitionClass =
 const dragOverTargetClass =
   "scale-[1.02] border-solid border-game-feedback-success bg-game-feedback-success/10";
 
+function BottomConnector({ variant }: { variant: WordDropZoneBottomConnector }) {
+  const connected = variant === "wide-connected";
+  const showWideBridge =
+    variant === "wide-not-connected" || variant === "wide-connected";
+
+  return (
+    <div
+      className={cn(
+        "flex w-full justify-center overflow-hidden leading-none transition-[height] duration-[220ms] ease-out motion-reduce:transition-none",
+        connected ? "h-[30px]" : "h-[40px]",
+      )}
+    >
+      {showWideBridge ? (
+        <AnimatedConnectionBridge connected={connected} />
+      ) : (
+        <WordDropZoneConnectorIcon />
+      )}
+    </div>
+  );
+}
+
 export function WordDropZone({
   label,
   zoneId,
@@ -74,8 +108,10 @@ export function WordDropZone({
   onDropSuccess,
   onDragEndFromZone,
   showBottomConnector = false,
+  bottomConnectorVariant = "empty",
   disabled = false,
   correct = false,
+  correctBadgeTone = "success",
   flowFocused = false,
   showLabel = true,
   interactionLocked = false,
@@ -169,16 +205,14 @@ export function WordDropZone({
           </div>
         </section>
         {showBottomConnector ? (
-          <div className="flex h-[30px] w-full justify-center leading-none">
-            <WordDropZoneConnectorIcon />
-          </div>
+          <BottomConnector variant={bottomConnectorVariant} />
         ) : null}
       </div>
     );
   }
 
   return (
-    <div className={cn("relative w-full px-5", className)}>
+    <div className={cn("relative isolate w-full px-5", className)}>
       <section
         className={cn(
           "relative",
@@ -188,7 +222,12 @@ export function WordDropZone({
           flowShadowClass(flowFocused),
         )}
       >
-        {locked ? <WordDropZoneCorrectBadge /> : null}
+        {locked ? (
+          <WordDropZoneCorrectBadge
+            tone={correctBadgeTone}
+            className="word-drop-zone-correct-badge-in motion-reduce:animate-none"
+          />
+        ) : null}
         {showLabel ? (
           <Text variant="label" className="mb-1 block text-center">
             {label}
@@ -221,6 +260,8 @@ export function WordDropZone({
             !locked &&
               rejecting &&
               "border-4 border-solid border-game-border-surface-level2 bg-game-surface-base-level2 motion-reduce:animate-none animate-zone-reject",
+            locked &&
+              "word-drop-zone-correct-transition motion-reduce:animate-none",
           )}
           role="region"
           aria-label={
@@ -266,9 +307,7 @@ export function WordDropZone({
       </section>
 
       {showBottomConnector ? (
-        <div className="flex h-[30px] w-full justify-center leading-none">
-          <WordDropZoneConnectorIcon />
-        </div>
+        <BottomConnector variant={bottomConnectorVariant} />
       ) : null}
     </div>
   );

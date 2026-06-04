@@ -1,6 +1,6 @@
 export type LevelsToWin = 1 | 2 | 3;
 
-export type SolveFlow = "sequential" | "parallel";
+export type SolveFlow = "sequential" | "parallel" | "parallel-2";
 
 export type GameSettings = {
   levelsToWin: LevelsToWin;
@@ -26,7 +26,7 @@ export function parseGameSettings(search: string): GameSettings {
   }
 
   let solveFlow: SolveFlow = DEFAULT_GAME_SETTINGS.solveFlow;
-  if (flowRaw === "sequential" || flowRaw === "parallel") {
+  if (flowRaw === "sequential" || flowRaw === "parallel" || flowRaw === "parallel-2") {
     solveFlow = flowRaw;
   }
 
@@ -57,20 +57,26 @@ export function buildShareableHomeUrl(settings: GameSettings): string {
 
 export const LEVELS_TO_WIN_OPTIONS: LevelsToWin[] = [1, 2, 3];
 
-export const SOLVE_FLOW_OPTIONS: SolveFlow[] = ["sequential", "parallel"];
+export const SOLVE_FLOW_OPTIONS: SolveFlow[] = ["sequential", "parallel", "parallel-2"];
 
 export function levelsToWinLabel(count: LevelsToWin): string {
   return count === 1 ? "1 level" : `${count} levels`;
 }
 
 export function solveFlowLabel(flow: SolveFlow): string {
-  return flow === "sequential" ? "Sequential" : "Parallel";
+  if (flow === "sequential") return "Sequential";
+  if (flow === "parallel-2") return "Parallel 2.0";
+  return "Parallel";
 }
 
 export function solveFlowDescription(flow: SolveFlow): string {
-  return flow === "sequential"
-    ? "Reason, then Rhyme, then Guess"
-    : "Reason, then Rhyme and Guess together";
+  if (flow === "sequential") return "Reason, then Rhyme, then Guess";
+  if (flow === "parallel-2") return "Experimental parallel flow";
+  return "Reason, then Rhyme and Guess together";
+}
+
+export function isParallelSolveFlow(flow: SolveFlow): boolean {
+  return flow === "parallel" || flow === "parallel-2";
 }
 
 export function gameSettingsSummary(settings: GameSettings): string {

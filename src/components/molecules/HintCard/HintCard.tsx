@@ -55,7 +55,7 @@ export function HintCard({
   );
 
   const sharedClass = cn(
-    "flex w-full min-h-[4.5rem] flex-col items-center justify-center rounded-lg px-2.5 py-3.5 transition-[transform,box-shadow,background-color] duration-150",
+    "flex w-full min-h-[4.5rem] flex-col items-center justify-center rounded-2xl px-2.5 py-3.5 transition-[transform,box-shadow,background-color] duration-150",
     solved &&
       "border border-game-border-component-wordcloudtile bg-game-surface-component-wordcloudtile-hover",
     interactive &&

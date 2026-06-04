@@ -1,1 +1,4 @@
-export { CorrectCheckBadge as WordDropZoneCorrectBadge } from "../HintCard/CorrectCheckBadge";
+export {
+  CorrectCheckBadge as WordDropZoneCorrectBadge,
+  type CorrectCheckBadgeTone as WordDropZoneCorrectBadgeTone,
+} from "../HintCard/CorrectCheckBadge";

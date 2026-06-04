@@ -1,4 +1,8 @@
-import { Connection, type ConnectionVariant } from "../../atoms/Connection";
+import {
+  Connection,
+  ConnectionBridge,
+  type ConnectionVariant,
+} from "../../atoms/Connection";
 import { Text } from "../../atoms/Text";
 
 const VARIANTS: { variant: ConnectionVariant; label: string }[] = [
@@ -38,6 +42,26 @@ export function ConnectionShowcase() {
             <Connection variant="rhyme" />
             <Connection variant="connect" />
             <Connection variant="empty" />
+          </div>
+        </div>
+
+        <div className="mt-8 border-t border-game-border-surface-level1 pt-6">
+          <Text variant="caption" className="mb-3 block">
+            Wide connectors
+          </Text>
+          <div className="flex flex-wrap items-end gap-8">
+            <div className="flex flex-col items-center gap-2">
+              <ConnectionBridge variant="not-connected" />
+              <Text variant="caption" className="text-center">
+                Not connected
+              </Text>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <ConnectionBridge variant="connected" />
+              <Text variant="caption" className="text-center">
+                Connected
+              </Text>
+            </div>
           </div>
         </div>
       </div>

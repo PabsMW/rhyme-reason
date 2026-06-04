@@ -1,7 +1,13 @@
+import { AnimatedConnectionBridge } from "../../atoms/Connection";
 import { Text } from "../../atoms/Text";
 import { GuessInput } from "../GuessInput";
 import { WordDropZoneConnectorIcon } from "../WordDropZone/WordDropZoneConnectorIcon";
 import { cn } from "../../../lib/cn";
+
+export type GuessSectionBottomConnector =
+  | "empty"
+  | "wide-not-connected"
+  | "wide-connected";
 
 export type GuessSectionProps = {
   value: string;
@@ -16,6 +22,9 @@ export type GuessSectionProps = {
   flowFocused?: boolean;
   /** Parallel mode: blue connector while Answer and Rhyme are both active. */
   parallelConnectorActive?: boolean;
+  /** Parallel 2.0: disabled Answer uses a blue 6px frame instead of white. */
+  parallelFrameActive?: boolean;
+  bottomConnectorVariant?: GuessSectionBottomConnector;
   className?: string;
 };
 
@@ -29,10 +38,17 @@ export function GuessSection({
   disabled = false,
   flowFocused = false,
   parallelConnectorActive = false,
+  parallelFrameActive = false,
+  bottomConnectorVariant = "empty",
   className,
 }: GuessSectionProps) {
+  const connectorIsWide =
+    bottomConnectorVariant === "wide-not-connected" ||
+    bottomConnectorVariant === "wide-connected";
+  const connectorConnected = bottomConnectorVariant === "wide-connected";
+
   return (
-    <div className={cn("relative w-full px-5", className)}>
+    <div className={cn("relative isolate w-full px-5", className)}>
       <section
         className={cn(
           "mx-auto w-full rounded-2xl transition-shadow duration-200",
@@ -42,16 +58,26 @@ export function GuessSection({
               ? "max-w-[400px]"
               : "max-w-[300px]",
           disabled
-            ? "border-6 border-solid border-white bg-game-surface-component-wordinput-disable px-2.5 py-0.5"
-            : "border border-game-border-component-wordinput-default bg-game-surface-component-wordinput-default px-4 py-2",
-          flowFocused ? "shadow-flow-focus" : "shadow-flow-default",
+            ? cn(
+                "border-6 border-solid px-2.5 py-0",
+                parallelFrameActive
+                  ? "border-blue-600 bg-blue-800"
+                  : "border-white bg-game-surface-component-wordinput-disable",
+              )
+            : "border border-game-border-component-wordinput-default bg-game-surface-component-wordinput-default px-2 py-2",
+          flowFocused ? "answer-board--flow-focused" : "shadow-flow-default",
         )}
       >
         {disabled ? (
-          <div className="flex min-h-[2.25rem] items-center justify-center">
+          <div className="flex h-full min-h-[2.25rem] w-full items-center justify-center">
             <Text
               variant="label"
-              className="text-center font-extrabold text-game-text-component-wordinput-disable"
+              className={cn(
+                "h-fit text-center font-extrabold",
+                parallelFrameActive
+                  ? "text-white/80"
+                  : "text-game-text-component-wordinput-disable",
+              )}
             >
               Answer
             </Text>
@@ -77,8 +103,17 @@ export function GuessSection({
           </>
         )}
       </section>
-      <div className="flex h-[20px] w-full justify-center leading-none">
-        <WordDropZoneConnectorIcon parallelActive={parallelConnectorActive} />
+      <div
+        className={cn(
+          "flex w-full justify-center overflow-hidden leading-none transition-[height] duration-[220ms] ease-out motion-reduce:transition-none",
+          connectorConnected ? "h-[30px]" : "h-[40px]",
+        )}
+      >
+        {connectorIsWide ? (
+          <AnimatedConnectionBridge connected={connectorConnected} flipped />
+        ) : (
+          <WordDropZoneConnectorIcon parallelActive={parallelConnectorActive} />
+        )}
       </div>
     </div>
   );

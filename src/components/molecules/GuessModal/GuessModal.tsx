@@ -4,7 +4,7 @@ import { Button } from "../../atoms/Button";
 import { Text } from "../../atoms/Text";
 import type { ClueSubmission, HintDefinition } from "../../../data/game";
 import { findCloudTileElement } from "../../../lib/findCloudTileElement";
-import type { SolveFlow } from "../../../lib/gameSettings";
+import { isParallelSolveFlow, type SolveFlow } from "../../../lib/gameSettings";
 import { getRejectFallbackMs, getZoneRejectShakeMs } from "../../../lib/rejectAnimation";
 import { cn } from "../../../lib/cn";
 import { ClueSection } from "../ClueSection";
@@ -53,7 +53,7 @@ function useSolveFlowState(
   rhymeCorrect: boolean,
   guessFilled: boolean,
 ) {
-  const parallel = solveFlow === "parallel";
+  const parallel = isParallelSolveFlow(solveFlow);
 
   return {
     rhymesUnlocked: reasonCorrect,
@@ -405,6 +405,7 @@ export function GuessModal({
             displayNumber={hintDisplayNumber}
             active
             showClueLabel={false}
+            showBottomConnector={solveFlow !== "parallel-2"}
           />
 
           {flyback ? (
@@ -422,7 +423,9 @@ export function GuessModal({
             showLabel={false}
             value={reasonWord}
             correct={reasonCorrect}
+            correctBadgeTone={solveFlow === "parallel-2" ? "primary" : "success"}
             flowFocused={reasonFlowFocused}
+            parallelFrameActive={solveFlow === "parallel-2" && reasonCorrect}
             interactionLocked={interactionLocked}
             previewWord={
               rejecting?.zone === "reason" && !flyback ? rejecting.word : null
@@ -433,13 +436,28 @@ export function GuessModal({
             onDropSuccess={markDropSucceeded}
             onDragEndFromZone={handleDragEndFromZone}
             showBottomConnector
+            bottomConnectorVariant={
+              solveFlow === "parallel-2"
+                ? reasonCorrect
+                  ? "wide-connected"
+                  : "wide-not-connected"
+                : "empty"
+            }
           />
 
           <GuessSection
             formId={guessFormId}
             disabled={!guessInputUnlocked}
             flowFocused={guessFlowFocused}
-            parallelConnectorActive={solveFlow === "parallel" && reasonCorrect}
+            parallelConnectorActive={isParallelSolveFlow(solveFlow) && reasonCorrect}
+            parallelFrameActive={solveFlow === "parallel-2"}
+            bottomConnectorVariant={
+              solveFlow === "parallel-2"
+                ? rhymeCorrect
+                  ? "wide-connected"
+                  : "wide-not-connected"
+                : "empty"
+            }
             value={guess}
             onChange={(value) => {
               onGuessChange(value);
@@ -450,13 +468,18 @@ export function GuessModal({
           />
 
           <WordDropZone
-            label="Rhyme"
+            label="Rhmyes with"
             zoneId="rhymes"
             value={rhymeWord}
             correct={rhymeCorrect}
+            correctBadgeTone={solveFlow === "parallel-2" ? "primary" : "success"}
             disabled={!rhymesUnlocked}
             flowFocused={rhymesFlowFocused}
-            parallelFrameActive={solveFlow === "parallel" && reasonCorrect}
+            parallelFrameActive={
+              isParallelSolveFlow(solveFlow) &&
+              reasonCorrect &&
+              !(solveFlow === "parallel-2" && rhymesFlowFocused)
+            }
             interactionLocked={interactionLocked}
             previewWord={
               rejecting?.zone === "rhymes" && !flyback ? rejecting.word : null
