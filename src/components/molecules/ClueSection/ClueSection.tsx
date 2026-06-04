@@ -21,7 +21,6 @@ export function ClueSection({
   solved = false,
   onClick,
   showClueLabel,
-  showBottomConnector = true,
   className,
 }: ClueSectionProps) {
   return (
