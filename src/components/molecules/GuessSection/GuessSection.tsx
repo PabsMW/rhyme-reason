@@ -73,7 +73,7 @@ export function GuessSection({
             <Text
               variant="label"
               className={cn(
-                "h-fit text-center font-extrabold",
+                "h-fit select-none text-center font-extrabold",
                 parallelFrameActive
                   ? "text-white/80"
                   : "text-game-text-component-wordinput-disable",

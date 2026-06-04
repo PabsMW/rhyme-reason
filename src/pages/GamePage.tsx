@@ -70,8 +70,10 @@ export function GamePage() {
     (submission: ClueSubmission) => {
       if (!selectedHintId) return;
 
-      const result = submitClue(run, selectedHintId, submission);
+      const runWithSubmitMove = recordMove(run);
+      const result = submitClue(runWithSubmitMove, selectedHintId, submission);
       if (!result.ok) {
+        setRun(runWithSubmitMove);
         setError("Wrong answer");
         return;
       }

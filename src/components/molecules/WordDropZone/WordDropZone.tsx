@@ -148,7 +148,7 @@ export function WordDropZone({
     setDragOver(false);
   };
 
-  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
+  const handleDragOver = (event: DragEvent<HTMLElement>) => {
     if (locked || interactionLocked) {
       if (!locked) {
         event.preventDefault();
@@ -161,7 +161,7 @@ export function WordDropZone({
     setDragOver(true);
   };
 
-  const handleDragEnter = (event: DragEvent<HTMLDivElement>) => {
+  const handleDragEnter = (event: DragEvent<HTMLElement>) => {
     if (!canHighlightDrop) return;
     event.preventDefault();
     dragDepthRef.current += 1;
@@ -174,7 +174,7 @@ export function WordDropZone({
     if (dragDepthRef.current === 0) setDragOver(false);
   };
 
-  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
+  const handleDrop = (event: DragEvent<HTMLElement>) => {
     if (locked || interactionLocked) return;
     event.preventDefault();
     clearDragOver();
@@ -199,7 +199,7 @@ export function WordDropZone({
           )}
         >
           <div className="flex min-h-[2.25rem] items-center justify-center">
-            <Text variant="label" className="text-center">
+            <Text variant="label" className="select-none text-center">
               {label}
             </Text>
           </div>
@@ -214,6 +214,21 @@ export function WordDropZone({
   return (
     <div className={cn("relative isolate w-full px-5", className)}>
       <section
+        data-word-drop-zone={zoneId}
+        onDragOver={handleDragOver}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        role="region"
+        aria-label={
+          locked
+            ? `${label}: ${value}, correct`
+            : rejecting
+              ? `${label}: incorrect word`
+              : displayValue
+                ? `${label}: ${displayValue}`
+                : `${label} word drop zone`
+        }
         className={cn(
           "relative",
           frameClass,
@@ -229,16 +244,11 @@ export function WordDropZone({
           />
         ) : null}
         {showLabel ? (
-          <Text variant="label" className="mb-1 block text-center">
+          <Text variant="label" className="mb-1 block select-none text-center">
             {label}
           </Text>
         ) : null}
         <div
-          data-word-drop-zone={zoneId}
-          onDragOver={handleDragOver}
-          onDragEnter={handleDragEnter}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
           className={cn(
             "flex items-center justify-center rounded-xl px-4 py-1.5",
             dropTargetTransitionClass,
@@ -263,16 +273,6 @@ export function WordDropZone({
             locked &&
               "word-drop-zone-correct-transition motion-reduce:animate-none",
           )}
-          role="region"
-          aria-label={
-            locked
-              ? `${label}: ${value}, correct`
-              : rejecting
-                ? `${label}: incorrect word`
-                : displayValue
-                  ? `${label}: ${displayValue}`
-                  : `${label} word drop zone`
-          }
         >
           {displayValue ? (
             locked ? (
@@ -299,7 +299,7 @@ export function WordDropZone({
               />
             )
           ) : (
-            <Text variant="caption" className="text-center font-semibold">
+            <Text variant="caption" className="select-none text-center font-semibold">
               Drag a word here
             </Text>
           )}

@@ -282,13 +282,12 @@ export function GuessModal({
     }
 
     setSubmitError(null);
-    onRecordMove();
     onSubmit({
       answer: trimmed,
       connect: reasonWord,
       rhyme: rhymeWord,
     });
-  }, [guess, onSubmit, onRecordMove, reasonWord, rhymeWord]);
+  }, [guess, onSubmit, reasonWord, rhymeWord]);
 
   useEffect(() => {
     if (!open) return;
