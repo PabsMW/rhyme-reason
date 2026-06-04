@@ -1,6 +1,10 @@
 import { AnimatedConnectionBridge } from "../../atoms/Connection";
 import { Text } from "../../atoms/Text";
 import { GuessInput } from "../GuessInput";
+import {
+  CorrectCheckBadge,
+  type CorrectCheckBadgeTone,
+} from "../HintCard/CorrectCheckBadge";
 import { WordDropZoneConnectorIcon } from "../WordDropZone/WordDropZoneConnectorIcon";
 import { cn } from "../../../lib/cn";
 
@@ -16,14 +20,19 @@ export type GuessSectionProps = {
   error?: string | null;
   formId?: string;
   showSubmitButton?: boolean;
+  showBottomConnector?: boolean;
   /** Collapses to label only; input is not rendered. */
   disabled?: boolean;
   /** Current step in the modal flow (elevated shadow). */
   flowFocused?: boolean;
   /** Parallel mode: blue connector while Answer and Rhyme are both active. */
   parallelConnectorActive?: boolean;
-  /** Parallel 2.0: disabled Answer uses a blue 6px frame instead of white. */
+  /** Parallel 2.0: Answer uses a blue 6px frame. */
   parallelFrameActive?: boolean;
+  /** Shows a top-right correct check badge on the answer board. */
+  correct?: boolean;
+  /** Tone of the correct check badge when shown. */
+  correctBadgeTone?: CorrectCheckBadgeTone;
   bottomConnectorVariant?: GuessSectionBottomConnector;
   className?: string;
 };
@@ -35,10 +44,13 @@ export function GuessSection({
   error,
   formId,
   showSubmitButton = false,
+  showBottomConnector = true,
   disabled = false,
   flowFocused = false,
   parallelConnectorActive = false,
   parallelFrameActive = false,
+  correct = false,
+  correctBadgeTone = "success",
   bottomConnectorVariant = "empty",
   className,
 }: GuessSectionProps) {
@@ -64,10 +76,18 @@ export function GuessSection({
                   ? "border-blue-600 bg-blue-800"
                   : "border-white bg-game-surface-component-wordinput-disable",
               )
-            : "border border-game-border-component-wordinput-default bg-game-surface-component-wordinput-default px-2 py-2",
+            : parallelFrameActive
+              ? "border-6 border-solid border-blue-600 bg-blue-800 px-2 py-2"
+              : "border border-game-border-component-wordinput-default bg-game-surface-component-wordinput-default px-2 py-2",
           flowFocused ? "answer-board--flow-focused" : "shadow-flow-default",
         )}
       >
+        {correct ? (
+          <CorrectCheckBadge
+            tone={correctBadgeTone}
+            className="word-drop-zone-correct-badge-in motion-reduce:animate-none"
+          />
+        ) : null}
         {disabled ? (
           <div className="flex h-full min-h-[2.25rem] w-full items-center justify-center">
             <Text
@@ -87,7 +107,12 @@ export function GuessSection({
             {!flowFocused ? (
               <Text
                 variant="label"
-                className="mb-1.5 block text-center text-game-text-component-wordinput-default"
+                className={cn(
+                  "mb-1.5 block text-center",
+                  parallelFrameActive
+                    ? "text-white/80"
+                    : "text-game-text-component-wordinput-default",
+                )}
               >
                 Answer
               </Text>
@@ -103,18 +128,20 @@ export function GuessSection({
           </>
         )}
       </section>
-      <div
-        className={cn(
-          "flex w-full justify-center overflow-hidden leading-none transition-[height] duration-[220ms] ease-out motion-reduce:transition-none",
-          connectorConnected ? "h-[30px]" : "h-[40px]",
-        )}
-      >
-        {connectorIsWide ? (
-          <AnimatedConnectionBridge connected={connectorConnected} flipped />
-        ) : (
-          <WordDropZoneConnectorIcon parallelActive={parallelConnectorActive} />
-        )}
-      </div>
+      {showBottomConnector ? (
+        <div
+          className={cn(
+            "flex w-full justify-center overflow-hidden leading-none transition-[height] duration-[220ms] ease-out motion-reduce:transition-none",
+            connectorConnected ? "h-[30px]" : "h-[40px]",
+          )}
+        >
+          {connectorIsWide ? (
+            <AnimatedConnectionBridge connected={connectorConnected} flipped />
+          ) : (
+            <WordDropZoneConnectorIcon parallelActive={parallelConnectorActive} />
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }

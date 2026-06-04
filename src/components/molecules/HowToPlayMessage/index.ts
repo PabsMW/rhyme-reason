@@ -1,0 +1,1 @@
+export { HowToPlayMessage } from "./HowToPlayMessage";

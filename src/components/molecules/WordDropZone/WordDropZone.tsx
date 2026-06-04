@@ -140,7 +140,7 @@ export function WordDropZone({
       : undefined;
   const frameClass = cn(
     sectionFrameClass,
-    parallelFrameActive && "word-drop-zone-board--parallel-active",
+    parallelFrameActive && "word-drop-zone-board--parallel-active border-blue-600",
   );
 
   const clearDragOver = () => {

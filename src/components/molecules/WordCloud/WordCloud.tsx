@@ -5,6 +5,7 @@ import { useWordDrag } from "../GuessModal/WordDragContext";
 type WordCloudProps = {
   words: string[];
   anchorWord?: string;
+  cueWord?: string;
   solvedWords?: string[];
   /** Words placed in drop zones (hidden from the cloud unless listed in ghostPlacedWords). */
   placedWords?: string[];
@@ -25,6 +26,7 @@ type WordCloudProps = {
 export function WordCloud({
   words,
   anchorWord,
+  cueWord,
   solvedWords = [],
   placedWords = [],
   ghostPlacedWords = [],
@@ -77,6 +79,7 @@ export function WordCloud({
     >
       {visibleWords.map((word) => {
         const lower = word.toLowerCase();
+        const isCueWord = cueWord?.toLowerCase() === lower;
         const variant = ghostSet.has(lower)
           ? "ghost"
           : solvedSet.has(lower)
@@ -108,6 +111,7 @@ export function WordCloud({
               dragBind={dragBind}
               dragSourceHidden={dragSourceHidden}
               onDragStart={onDragStart}
+              className={isCueWord && tileDraggable ? "word-cloud-tile--cue-pulse" : undefined}
             />
           </span>
         );

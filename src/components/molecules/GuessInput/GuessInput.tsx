@@ -54,7 +54,7 @@ export function GuessInput({
           aria-describedby={error ? errorId : undefined}
           placeholder="ANSWER"
           className={cn(
-            "min-w-0 flex-1 rounded-lg border border-blue-800 bg-blue-800 px-4 py-3 text-center font-sf-pro text-xl font-semibold uppercase tracking-wide text-white outline-none transition-colors",
+            "min-w-0 flex-1 rounded-lg border border-blue-800 bg-blue-800 px-4 py-1 text-center font-sf-pro text-xl font-semibold uppercase tracking-wide text-white outline-none transition-colors",
             "placeholder:text-white/60",
             "focus:border-white focus:ring-2 focus:ring-blue-400",
             error && "border-game-feedback-error",

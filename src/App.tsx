@@ -5,6 +5,7 @@ import { StyleGuidePage } from "./pages/StyleGuidePage";
 import { GamePage } from "./pages/GamePage";
 import { HelloWorldPage } from "./pages/HelloWorldPage";
 import { HomePage } from "./pages/HomePage";
+import { HowToPlayPage } from "./pages/HowToPlayPage";
 import { GameSettingsPage } from "./pages/GameSettingsPage";
 import { ResultPage } from "./pages/ResultPage";
 
@@ -14,6 +15,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/hello" element={<HelloWorldPage />} />
+        <Route path="/how-to-play" element={<HowToPlayPage />} />
         <Route path="/play" element={<GamePage />} />
         <Route path="/result" element={<ResultPage />} />
         <Route path="/settings" element={<GameSettingsPage />} />

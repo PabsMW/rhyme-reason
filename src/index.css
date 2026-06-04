@@ -44,6 +44,11 @@
       both;
   }
 
+  .word-cloud-tile--cue-pulse {
+    animation: word-cloud-tile-cue-pulse 1200ms ease-in-out infinite;
+    will-change: transform, filter;
+  }
+
   @keyframes word-drop-zone-correct-transition {
     0% {
       transform: scale(0.985);
@@ -71,6 +76,18 @@
     100% {
       opacity: 1;
       transform: scale(1);
+    }
+  }
+
+  @keyframes word-cloud-tile-cue-pulse {
+    0%,
+    100% {
+      transform: translateY(0) scale(1);
+      filter: saturate(1);
+    }
+    50% {
+      transform: translateY(-1px) scale(1.06);
+      filter: saturate(1.12);
     }
   }
 
@@ -126,6 +143,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .word-cloud-tile--cue-pulse,
     .word-drop-zone-board--flow-focused::after,
     .answer-board--flow-focused::after {
       animation: none;

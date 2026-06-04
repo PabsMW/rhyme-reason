@@ -7,6 +7,7 @@ import { GuessButtonShowcase } from "../components/molecules/GuessButtonShowcase
 import { WordDropZoneShowcase } from "../components/molecules/WordDropZoneShowcase";
 import { GuessInput } from "../components/molecules/GuessInput";
 import { HintCard } from "../components/molecules/HintCard";
+import { HowToPlayMessage } from "../components/molecules/HowToPlayMessage";
 import { WordCloudTileShowcase } from "../components/molecules/WordCloudTileShowcase";
 import { SEED_GAME } from "../data/game";
 
@@ -35,6 +36,13 @@ export function ComponentsPlaygroundPage() {
       <WordDropZoneShowcase />
 
       <WordCloudTileShowcase />
+
+      <section>
+        <Text variant="label">How to play message</Text>
+        <div className="mt-2 rounded-xl border border-dashed border-[#1F31A9]/25 bg-game-surface-base-level1 p-4">
+          <HowToPlayMessage />
+        </div>
+      </section>
 
       <section>
         <Text variant="label">Hint card</Text>

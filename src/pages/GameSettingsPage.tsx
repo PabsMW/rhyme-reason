@@ -40,6 +40,11 @@ export function GameSettingsPage() {
     setCopied(false);
   };
 
+  const setAlwaysShowTutorial = (alwaysShowTutorial: boolean) => {
+    setSettings((current) => ({ ...current, alwaysShowTutorial }));
+    setCopied(false);
+  };
+
   const handleCopyLink = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(shareUrl);
@@ -143,6 +148,40 @@ export function GameSettingsPage() {
               </button>
             );
           })}
+        </div>
+
+        <Text variant="label" className="mt-8 mb-2 block">
+          Tutorial
+        </Text>
+        <div
+          className="rounded-xl border border-game-border-surface-level2 bg-game-surface-base-level1 p-1"
+          role="group"
+          aria-label="Tutorial behavior"
+        >
+          <button
+            type="button"
+            aria-pressed={settings.alwaysShowTutorial}
+            onClick={() => setAlwaysShowTutorial(!settings.alwaysShowTutorial)}
+            className={cn(
+              "flex w-full items-center justify-between rounded-lg px-3 py-3 text-left transition-colors",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-game-border-action-primary-hover focus-visible:ring-offset-2",
+              settings.alwaysShowTutorial
+                ? "bg-game-surface-action-primary-default text-game-text-inverse shadow-btn-primary"
+                : "text-game-text-base-primary hover:bg-game-surface-base-level2",
+            )}
+          >
+            <span className="font-inter text-sm font-medium">Always show tutorial</span>
+            <span
+              className={cn(
+                "font-inter text-xs",
+                settings.alwaysShowTutorial
+                  ? "text-game-text-inverse/80"
+                  : "text-game-text-base-secondary",
+              )}
+            >
+              {settings.alwaysShowTutorial ? "On" : "Off"}
+            </span>
+          </button>
         </div>
 
         <Text variant="label" className="mt-8 mb-2 block">

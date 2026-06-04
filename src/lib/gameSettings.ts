@@ -5,20 +5,24 @@ export type SolveFlow = "sequential" | "parallel" | "parallel-2";
 export type GameSettings = {
   levelsToWin: LevelsToWin;
   solveFlow: SolveFlow;
+  alwaysShowTutorial: boolean;
 };
 
 export const DEFAULT_GAME_SETTINGS: GameSettings = {
   levelsToWin: 3,
   solveFlow: "sequential",
+  alwaysShowTutorial: false,
 };
 
 const LEVELS_PARAM = "levels";
 const FLOW_PARAM = "flow";
+const TUTORIAL_PARAM = "tutorial";
 
 export function parseGameSettings(search: string): GameSettings {
   const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
   const levelsRaw = params.get(LEVELS_PARAM);
   const flowRaw = params.get(FLOW_PARAM);
+  const tutorialRaw = params.get(TUTORIAL_PARAM);
 
   let levelsToWin: LevelsToWin = DEFAULT_GAME_SETTINGS.levelsToWin;
   if (levelsRaw === "1" || levelsRaw === "2" || levelsRaw === "3") {
@@ -30,7 +34,9 @@ export function parseGameSettings(search: string): GameSettings {
     solveFlow = flowRaw;
   }
 
-  return { levelsToWin, solveFlow };
+  const alwaysShowTutorial = tutorialRaw === "always";
+
+  return { levelsToWin, solveFlow, alwaysShowTutorial };
 }
 
 export function buildGameSettingsSearch(settings: GameSettings): string {
@@ -38,6 +44,9 @@ export function buildGameSettingsSearch(settings: GameSettings): string {
   params.set(LEVELS_PARAM, String(settings.levelsToWin));
   if (settings.solveFlow !== DEFAULT_GAME_SETTINGS.solveFlow) {
     params.set(FLOW_PARAM, settings.solveFlow);
+  }
+  if (settings.alwaysShowTutorial !== DEFAULT_GAME_SETTINGS.alwaysShowTutorial) {
+    params.set(TUTORIAL_PARAM, "always");
   }
   return `?${params.toString()}`;
 }

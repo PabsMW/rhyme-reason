@@ -5,6 +5,7 @@ import { Button } from "../components/atoms/Button";
 import { Text } from "../components/atoms/Text";
 import { SEED_GAME } from "../data/game";
 import { clearRun } from "../lib/gameRun";
+import { hasCompletedOnboarding } from "../lib/onboarding";
 import { cn } from "../lib/cn";
 import {
   gameSettingsSummary,
@@ -108,7 +109,13 @@ export function HomePage() {
 
   const handlePlay = () => {
     clearRun();
-    navigate(pathWithGameSettings("/play", gameSettings));
+    const showTutorial = gameSettings.alwaysShowTutorial || !hasCompletedOnboarding();
+    navigate(
+      pathWithGameSettings(
+        showTutorial ? "/how-to-play" : "/play",
+        gameSettings,
+      ),
+    );
   };
 
   return (
