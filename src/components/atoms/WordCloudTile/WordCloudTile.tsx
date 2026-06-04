@@ -8,6 +8,7 @@ export type WordCloudTileDragBind = {
   onPointerMove: (event: PointerEvent<HTMLElement>) => void;
   onPointerUp: (event: PointerEvent<HTMLElement>) => void;
   onPointerCancel: (event: PointerEvent<HTMLElement>) => void;
+  onLostPointerCapture: (event: PointerEvent<HTMLElement>) => void;
 };
 
 type WordCloudTileProps = {

@@ -8,7 +8,12 @@ import {
   type PointerEvent,
   type ReactNode,
 } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { WordCloudTile } from "../../atoms/WordCloudTile";
+import {
+  TILE_FLYBACK_MS,
+  TILE_FLYBACK_REDUCED_MS,
+} from "../../../lib/rejectAnimation";
 
 export type WordDragZoneId = "reason" | "rhymes";
 
@@ -27,6 +32,7 @@ type WordDragContextValue = {
     onPointerMove: (event: PointerEvent<HTMLElement>) => void;
     onPointerUp: (event: PointerEvent<HTMLElement>) => void;
     onPointerCancel: (event: PointerEvent<HTMLElement>) => void;
+    onLostPointerCapture: (event: PointerEvent<HTMLElement>) => void;
   };
   draggingWord: string | null;
   hoverTarget: WordDragTarget | null;
@@ -41,6 +47,12 @@ type ActiveDrag = {
   y: number;
   pointerId: number;
   captureEl: HTMLElement;
+};
+
+type ReturnDrag = {
+  word: string;
+  from: { left: number; top: number; width: number; height: number };
+  to: { left: number; top: number; width: number; height: number };
 };
 
 function resolveDropTarget(x: number, y: number): WordDragTarget | null {
@@ -77,7 +89,9 @@ export function WordDragProvider({
   onDragCancelFromZone,
 }: WordDragProviderProps) {
   const [activeDrag, setActiveDrag] = useState<ActiveDrag | null>(null);
+  const [returningDrag, setReturningDrag] = useState<ReturnDrag | null>(null);
   const [hoverTarget, setHoverTarget] = useState<WordDragTarget | null>(null);
+  const reduceMotion = useReducedMotion();
 
   const activeDragRef = useRef<ActiveDrag | null>(null);
   const hoverTargetRef = useRef<WordDragTarget | null>(null);
@@ -89,7 +103,12 @@ export function WordDragProvider({
   const releaseCapture = useCallback((event: PointerEvent<HTMLElement>) => {
     const drag = activeDragRef.current;
     if (!drag || drag.pointerId !== event.pointerId) return;
-    drag.captureEl.releasePointerCapture(event.pointerId);
+    if (!drag.captureEl.hasPointerCapture(event.pointerId)) return;
+    try {
+      drag.captureEl.releasePointerCapture(event.pointerId);
+    } catch {
+      // Pointer capture can already be released on some browsers/interactions.
+    }
   }, []);
 
   const finishDrag = useCallback(
@@ -121,6 +140,27 @@ export function WordDragProvider({
         }
       }
 
+      if (!droppedRef.current && drag.source.kind === "cloud") {
+        const sourceRect = drag.captureEl.getBoundingClientRect();
+        if (sourceRect.width > 0 && sourceRect.height > 0) {
+          setReturningDrag({
+            word: drag.word,
+            from: {
+              left: drag.x - sourceRect.width / 2,
+              top: drag.y - sourceRect.height / 2,
+              width: sourceRect.width,
+              height: sourceRect.height,
+            },
+            to: {
+              left: sourceRect.left,
+              top: sourceRect.top,
+              width: sourceRect.width,
+              height: sourceRect.height,
+            },
+          });
+        }
+      }
+
       activeDragRef.current = null;
       setActiveDrag(null);
       setHoverTarget(null);
@@ -134,9 +174,14 @@ export function WordDragProvider({
       onPointerDown: (event: PointerEvent<HTMLElement>) => {
         if (disabled || event.button !== 0) return;
         event.preventDefault();
+        setReturningDrag(null);
 
         const captureEl = event.currentTarget;
-        captureEl.setPointerCapture(event.pointerId);
+        try {
+          captureEl.setPointerCapture(event.pointerId);
+        } catch {
+          // Continue drag without capture fallback; events may still complete.
+        }
         onDragStart(source);
 
         const next: ActiveDrag = {
@@ -189,6 +234,18 @@ export function WordDragProvider({
         setHoverTarget(null);
         hoverTargetRef.current = null;
       },
+      onLostPointerCapture: (event: PointerEvent<HTMLElement>) => {
+        const drag = activeDragRef.current;
+        if (!drag || drag.pointerId !== event.pointerId) return;
+
+        if (drag.source.kind === "zone") {
+          onDragCancelFromZone(drag.source.zoneId);
+        }
+        activeDragRef.current = null;
+        setActiveDrag(null);
+        setHoverTarget(null);
+        hoverTargetRef.current = null;
+      },
     }),
     [disabled, finishDrag, onDragCancelFromZone, onDragStart, releaseCapture],
   );
@@ -196,11 +253,29 @@ export function WordDragProvider({
   const value = useMemo(
     () => ({
       bindTile,
-      draggingWord: activeDrag?.word ?? null,
+      draggingWord: activeDrag?.word ?? returningDrag?.word ?? null,
       hoverTarget,
     }),
-    [activeDrag?.word, bindTile, hoverTarget],
+    [activeDrag?.word, bindTile, hoverTarget, returningDrag?.word],
   );
+
+  const returnDuration = reduceMotion
+    ? TILE_FLYBACK_REDUCED_MS / 1000
+    : TILE_FLYBACK_MS / 1000;
+  const returnDeltaX = returningDrag
+    ? returningDrag.to.left - returningDrag.from.left
+    : 0;
+  const returnDeltaY = returningDrag
+    ? returningDrag.to.top - returningDrag.from.top
+    : 0;
+  const returnScaleX =
+    returningDrag && returningDrag.from.width > 0
+      ? returningDrag.to.width / returningDrag.from.width
+      : 1;
+  const returnScaleY =
+    returningDrag && returningDrag.from.height > 0
+      ? returningDrag.to.height / returningDrag.from.height
+      : 1;
 
   return (
     <WordDragContext.Provider value={value}>
@@ -213,6 +288,36 @@ export function WordDragProvider({
         >
           <WordCloudTile word={activeDrag.word} variant="highlighted" />
         </div>
+      ) : null}
+      {returningDrag ? (
+        <motion.div
+          className="pointer-events-none fixed z-[100] touch-none select-none"
+          style={{
+            left: returningDrag.from.left,
+            top: returningDrag.from.top,
+            width: returningDrag.from.width,
+            height: returningDrag.from.height,
+            transformOrigin: "0 0",
+          }}
+          initial={{ x: 0, y: 0, scaleX: 1, scaleY: 1 }}
+          animate={{
+            x: returnDeltaX,
+            y: returnDeltaY,
+            scaleX: returnScaleX,
+            scaleY: returnScaleY,
+          }}
+          transition={{ duration: returnDuration, ease: [0.33, 0, 0.2, 1] }}
+          onAnimationComplete={() => setReturningDrag(null)}
+          aria-hidden
+        >
+          <div className="flex size-full items-center justify-center">
+            <WordCloudTile
+              word={returningDrag.word}
+              variant="highlighted"
+              className="max-w-full"
+            />
+          </div>
+        </motion.div>
       ) : null}
     </WordDragContext.Provider>
   );
