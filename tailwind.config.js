@@ -173,10 +173,22 @@ export default {
           "30%, 60%, 90%": { transform: "translateX(8px)" },
           "35%, 65%": { borderColor: "var(--game-feedback-error)" },
         },
+        "input-reject": {
+          "0%, 100%": { transform: "translateX(0)" },
+          "15%, 45%, 75%": { transform: "translateX(-8px)" },
+          "30%, 60%, 90%": { transform: "translateX(8px)" },
+        },
+        "badge-pop": {
+          "0%": { transform: "scale(1.8)", opacity: "0" },
+          "60%": { opacity: "1" },
+          "100%": { transform: "scale(1)", opacity: "1" },
+        },
       },
       animation: {
         "slide-up-footer": "slide-up-footer 0.35s ease-out both",
         "zone-reject": "zone-reject 0.45s ease-in-out both",
+        "input-reject": "input-reject 0.45s ease-in-out both",
+        "badge-pop": "badge-pop 0.4s cubic-bezier(0.22, 1, 0.36, 1) both",
       },
     },
   },

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "../components/atoms/Button";
 import { Text } from "../components/atoms/Text";
@@ -13,6 +13,7 @@ import {
   type ClueSubmission,
   type RunState,
 } from "../data/game";
+import { getCelebrationDuration } from "../lib/celebrationIntensity";
 import { loadRun, recordMove, submitClue } from "../lib/gameRun";
 import { parseGameSettings, pathWithGameSettings } from "../lib/gameSettings";
 
@@ -24,7 +25,12 @@ export function GamePage() {
   const [selectedHintId, setSelectedHintId] = useState<string | null>(null);
   const [guess, setGuess] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [answerRejectSignal, setAnswerRejectSignal] = useState(0);
   const [guessModalOpen, setGuessModalOpen] = useState(false);
+  const [celebrateHintId, setCelebrateHintId] = useState<string | null>(null);
+  const [celebrateSignal, setCelebrateSignal] = useState(0);
+  const delayedWinNavigateRef = useRef(false);
+  const winNavigateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const levelDef = useMemo(() => getLevel(SEED_GAME, run.level), [run.level]);
   const cloud = useMemo(() => activeCloud(SEED_GAME, levelDef), [levelDef]);
@@ -43,10 +49,18 @@ export function GamePage() {
   }, [levelDef.hints, selectedHintId]);
 
   useEffect(() => {
-    if (run.status === "won") {
-      navigate(pathWithGameSettings("/result", gameSettings), { replace: true });
-    }
+    if (run.status !== "won" || delayedWinNavigateRef.current) return;
+    navigate(pathWithGameSettings("/result", gameSettings), { replace: true });
   }, [run.status, navigate, gameSettings]);
+
+  useEffect(
+    () => () => {
+      if (winNavigateTimerRef.current !== null) {
+        window.clearTimeout(winNavigateTimerRef.current);
+      }
+    },
+    [],
+  );
 
   const closeGuessModal = useCallback(() => {
     setGuessModalOpen(false);
@@ -75,16 +89,36 @@ export function GamePage() {
       if (!result.ok) {
         setRun(runWithSubmitMove);
         setError("Wrong answer");
+        setAnswerRejectSignal((n) => n + 1);
         return;
       }
 
+      const solvedHintId = selectedHintId;
       setError(null);
       setGuess("");
       setRun(result.run);
       closeGuessModal();
 
+      // Play the celebration on the just-solved clue card in the picker.
+      setCelebrateHintId(solvedHintId);
+      setCelebrateSignal((n) => n + 1);
+      window.requestAnimationFrame(() => {
+        document
+          .getElementById(`hint-card-${solvedHintId}`)
+          ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+
       if (result.complete) {
-        navigate(pathWithGameSettings("/result", gameSettings));
+        // Hold on the picker so the celebration is visible before routing.
+        delayedWinNavigateRef.current = true;
+        if (winNavigateTimerRef.current !== null) {
+          window.clearTimeout(winNavigateTimerRef.current);
+        }
+        winNavigateTimerRef.current = window.setTimeout(() => {
+          delayedWinNavigateRef.current = false;
+          winNavigateTimerRef.current = null;
+          navigate(pathWithGameSettings("/result", gameSettings));
+        }, getCelebrationDuration());
       }
     },
     [closeGuessModal, gameSettings, navigate, run, selectedHintId],
@@ -128,7 +162,7 @@ export function GamePage() {
           Tap any clue to solve
         </Text>
         <ul
-          className="flex w-full flex-col gap-3"
+          className="flex w-full flex-col gap-3 overflow-visible"
           role="group"
           aria-label="Clues"
         >
@@ -141,6 +175,7 @@ export function GamePage() {
                 displayNumber={index + 1}
                 solved={solved}
                 active={selectedHintId === hint.id && guessModalOpen}
+                celebrateSignal={celebrateHintId === hint.id ? celebrateSignal : 0}
                 onClick={solved ? undefined : () => openGuessModal(hint.id)}
               />
             );
@@ -163,6 +198,7 @@ export function GamePage() {
           }}
           onSubmit={handleSubmit}
           error={error}
+          answerRejectSignal={answerRejectSignal}
           moves={run.totalMoves}
           onRecordMove={handleRecordMove}
           solveFlow={gameSettings.solveFlow}

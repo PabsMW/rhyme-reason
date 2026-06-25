@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "../components/atoms/Button";
 import { Text } from "../components/atoms/Text";
 import { ClueSection } from "../components/molecules/ClueSection";
+import { ClueWordFlowPanelShowcase } from "../components/molecules/ClueWordFlowPanelShowcase";
 import { ConnectionShowcase } from "../components/molecules/ConnectionShowcase";
 import { GuessButtonShowcase } from "../components/molecules/GuessButtonShowcase";
 import { WordDropZoneShowcase } from "../components/molecules/WordDropZoneShowcase";
@@ -34,6 +35,8 @@ export function ComponentsPlaygroundPage() {
       <ConnectionShowcase />
 
       <WordDropZoneShowcase />
+
+      <ClueWordFlowPanelShowcase />
 
       <WordCloudTileShowcase />
 

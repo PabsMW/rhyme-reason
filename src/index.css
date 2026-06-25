@@ -14,6 +14,11 @@
     transition: border-color 200ms ease-out;
   }
 
+  .word-drop-zone-board--flow-focused {
+    position: relative;
+    isolation: isolate;
+  }
+
   .word-drop-zone-board--flow-focused::after {
     content: "";
     position: absolute;
@@ -28,6 +33,28 @@
     transform: translate(-50%, 50%);
     pointer-events: none;
     animation: zone-glow-guided 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* RhymesInputDropZone — glow sits below the white board, not inside it */
+  .rhymes-drop-zone-glow {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .rhymes-drop-zone-glow::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 70%;
+    z-index: -1;
+    width: 92%;
+    height: 40px;
+    border-radius: 16px;
+    background-color: theme("colors.slate.400");
+    filter: blur(20px);
+    transform: translate(-50%, 20%);
+    pointer-events: none;
+    animation: rhymes-zone-glow-guided 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
   .word-drop-zone-board--parallel-active {
@@ -142,9 +169,25 @@
     }
   }
 
+  @keyframes rhymes-zone-glow-guided {
+    0% {
+      opacity: 0;
+      transform: translate(-50%, 10%) scale(0.94);
+    }
+    68% {
+      opacity: 0.92;
+      transform: translate(-50%, 25%) scale(1.01);
+    }
+    100% {
+      opacity: 1;
+      transform: translate(-50%, 20%) scale(1);
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .word-cloud-tile--cue-pulse,
     .word-drop-zone-board--flow-focused::after,
+    .rhymes-drop-zone-glow::after,
     .answer-board--flow-focused::after {
       animation: none;
     }

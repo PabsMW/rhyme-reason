@@ -127,9 +127,10 @@ export function WordDragProvider({
         droppedRef.current = true;
       } else if (target === "reason" || target === "rhymes") {
         const accepted = onDropOnZone(target, drag.word);
+        // Zone drops (accepted or rejected) are handled by the modal; skip cloud return drag.
+        droppedRef.current = true;
         if (accepted) {
           onDropSuccess();
-          droppedRef.current = true;
         }
       }
 

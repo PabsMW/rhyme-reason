@@ -1,6 +1,6 @@
 export type LevelsToWin = 1 | 2 | 3;
 
-export type SolveFlow = "sequential" | "parallel" | "parallel-2";
+export type SolveFlow = "sequential" | "parallel" | "parallel-2" | "parallel-3";
 
 export type GameSettings = {
   levelsToWin: LevelsToWin;
@@ -30,7 +30,12 @@ export function parseGameSettings(search: string): GameSettings {
   }
 
   let solveFlow: SolveFlow = DEFAULT_GAME_SETTINGS.solveFlow;
-  if (flowRaw === "sequential" || flowRaw === "parallel" || flowRaw === "parallel-2") {
+  if (
+    flowRaw === "sequential" ||
+    flowRaw === "parallel" ||
+    flowRaw === "parallel-2" ||
+    flowRaw === "parallel-3"
+  ) {
     solveFlow = flowRaw;
   }
 
@@ -66,7 +71,12 @@ export function buildShareableHomeUrl(settings: GameSettings): string {
 
 export const LEVELS_TO_WIN_OPTIONS: LevelsToWin[] = [1, 2, 3];
 
-export const SOLVE_FLOW_OPTIONS: SolveFlow[] = ["sequential", "parallel", "parallel-2"];
+export const SOLVE_FLOW_OPTIONS: SolveFlow[] = [
+  "sequential",
+  "parallel",
+  "parallel-2",
+  "parallel-3",
+];
 
 export function levelsToWinLabel(count: LevelsToWin): string {
   return count === 1 ? "1 level" : `${count} levels`;
@@ -75,17 +85,19 @@ export function levelsToWinLabel(count: LevelsToWin): string {
 export function solveFlowLabel(flow: SolveFlow): string {
   if (flow === "sequential") return "Sequential";
   if (flow === "parallel-2") return "Parallel 2.0";
+  if (flow === "parallel-3") return "Parallel 3.0";
   return "Parallel";
 }
 
 export function solveFlowDescription(flow: SolveFlow): string {
   if (flow === "sequential") return "Reason, then Rhyme, then Guess";
   if (flow === "parallel-2") return "Experimental parallel flow";
+  if (flow === "parallel-3") return "Clue word flow panel";
   return "Reason, then Rhyme and Guess together";
 }
 
 export function isParallelSolveFlow(flow: SolveFlow): boolean {
-  return flow === "parallel" || flow === "parallel-2";
+  return flow === "parallel" || flow === "parallel-2" || flow === "parallel-3";
 }
 
 export function gameSettingsSummary(settings: GameSettings): string {

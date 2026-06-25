@@ -1,16 +1,15 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "../components/atoms/Button";
 import { Text } from "../components/atoms/Text";
-import { ClueSection } from "../components/molecules/ClueSection";
-import { GuessSection } from "../components/molecules/GuessSection";
+import { ClueWordFlowPanel } from "../components/molecules/ClueWordFlowPanel";
 import { HowToPlayMessage } from "../components/molecules/HowToPlayMessage";
 import { WordCloud } from "../components/molecules/WordCloud";
-import { WordDropZone } from "../components/molecules/WordDropZone";
 import { WordDragProvider, type WordDragZoneId } from "../components/molecules/GuessModal/WordDragContext";
 import type { HintDefinition } from "../data/game";
 import { clearRun } from "../lib/gameRun";
+import { cn } from "../lib/cn";
 import { markOnboardingComplete } from "../lib/onboarding";
 import { parseGameSettings, pathWithGameSettings } from "../lib/gameSettings";
 
@@ -18,7 +17,7 @@ type TutorialStep = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 const TUTORIAL_HINT: HintDefinition = {
   id: "how-to-play-1",
-  clueText: "Big Dog",
+  clueText: "A breed of big dog",
   anchorCloudWord: "GREAT",
   rhymeWith: "LANE",
 };
@@ -67,7 +66,7 @@ function messageForStep(step: TutorialStep): {
   }
   if (step === 4) {
     return {
-      prefix: '"Big Dog" and "Great" ... ',
+      prefix: '"A breed of big dog" and "Great" ... ',
       highlight: "Dane",
       suffix: ' can be the answer. Type "Dane" in the answer.',
     };
@@ -76,7 +75,7 @@ function messageForStep(step: TutorialStep): {
     return {
       prefix: '"Lane" does rhyme with "',
       highlight: "Dane",
-      suffix: '". Drag "Lane" to "Rhymes width" box.',
+      suffix: '". Drag "Lane" to the "Rhymes with" box.',
     };
   }
   if (step === 6) {
@@ -106,12 +105,11 @@ export function HowToPlayPage() {
   const [hintError, setHintError] = useState<string | null>(null);
   const prefersReducedMotion = useReducedMotion();
 
-  const canNextManually = step === 1 || step === 2;
+  const showNextFooter = step === 1 || step === 2;
   const showCloud = step >= 2;
-  const showReason = step >= 3;
-  const showRhymes = step >= 4;
-  const answerEnabled = step >= 4 && step <= 7;
   const showGuessFooter = step === 6;
+  const showStartGameFooter = step === 7;
+  const showTutorialFooter = showNextFooter || showGuessFooter || showStartGameFooter;
   const reasonCorrect = reasonWord ? isExpectedReasonWord(reasonWord) : false;
   const rhymeCorrect = rhymeWord ? isExpectedRhymeWord(rhymeWord) : false;
 
@@ -195,6 +193,14 @@ export function HowToPlayPage() {
     setStep(7);
   }, [guess, step]);
 
+  const handleGuessFormSubmit = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      handleSubmit();
+    },
+    [handleSubmit],
+  );
+
   useEffect(() => {
     if (step !== 4) return;
     const focusTimer = window.setTimeout(() => {
@@ -247,99 +253,7 @@ export function HowToPlayPage() {
               </Button>
             </header>
 
-            <WordDragProvider
-              disabled={step === 7}
-              onDragStart={() => undefined}
-              onDropOnZone={handleDropOnZone}
-              onDropOnCloud={() => undefined}
-              onDropSuccess={() => undefined}
-              onDragCancelFromZone={() => undefined}
-            >
-              <div className="flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto pb-8">
-                {showCloud ? (
-                  <section className="select-none rounded-t-none rounded-b-2xl bg-game-surface-base-level1 px-1 py-4">
-                    <WordCloud
-                      words={TUTORIAL_CLOUD_WORDS}
-                      cueWord={
-                        step === 3
-                          ? TUTORIAL_HINT.anchorCloudWord
-                          : step === 5
-                            ? TUTORIAL_HINT.rhymeWith
-                            : undefined
-                      }
-                      solvedWords={[]}
-                      placedWords={placedWords}
-                      ghostPlacedWords={ghostPlacedWords}
-                      draggable={step >= 3 && step <= 5}
-                    />
-                  </section>
-                ) : null}
-
-                <ClueSection
-                  hint={TUTORIAL_HINT}
-                  displayNumber={1}
-                  active
-                  showClueLabel={false}
-                  showBottomConnector={showReason}
-                  className={step === 1 ? "pt-[10px]" : undefined}
-                />
-
-                {showReason ? (
-                  <WordDropZone
-                    label="Reason"
-                    zoneId="reason"
-                    showLabel={false}
-                    value={reasonWord}
-                    correct={reasonCorrect}
-                    correctBadgeTone="primary"
-                    parallelFrameActive={reasonCorrect}
-                    flowFocused={step === 3}
-                    onPlaceWord={placeReason}
-                    showBottomConnector
-                    bottomConnectorVariant={
-                      reasonCorrect ? "wide-connected" : "wide-not-connected"
-                    }
-                  />
-                ) : null}
-
-                <GuessSection
-                  formId={guessFormId}
-                  value={guess}
-                  onChange={(value) => {
-                    if (!answerEnabled || step === 7) return;
-                    setGuess(value);
-                    if (hintError) setHintError(null);
-                  }}
-                  onSubmit={handleSubmit}
-                  error={step === 6 ? hintError : null}
-                  showSubmitButton={false}
-                  showBottomConnector={showRhymes}
-                  bottomConnectorVariant={
-                    rhymeCorrect ? "wide-connected" : "wide-not-connected"
-                  }
-                  disabled={!answerEnabled}
-                  parallelFrameActive
-                  flowFocused={step >= 4 && step <= 7}
-                  correct={step === 7 && isExpectedAnswer(guess)}
-                  correctBadgeTone="primary"
-                />
-
-                {showRhymes ? (
-                  <WordDropZone
-                    label="Rhymes with"
-                    zoneId="rhymes"
-                    value={rhymeWord}
-                    correct={rhymeCorrect}
-                    correctBadgeTone="primary"
-                    parallelFrameActive={rhymeCorrect}
-                    disabled={step < 5}
-                    flowFocused={step === 5}
-                    onPlaceWord={placeRhyme}
-                  />
-                ) : null}
-              </div>
-            </WordDragProvider>
-            <div className="shrink-0 border-t border-game-border-surface-level1 bg-game-surface-base-level1 px-2.5 pb-2.5 pt-0">
+            <div className="relative z-10 shrink-0 border-b border-game-border-surface-level1 bg-game-surface-base-level1 px-2.5 pb-2.5 pt-2.5">
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={`how-to-play-message-${step}`}
@@ -364,40 +278,107 @@ export function HowToPlayPage() {
                     prefix={message.prefix}
                     highlight={message.highlight}
                     suffix={message.suffix}
-                    onNext={canNextManually ? handleNext : undefined}
-                    nextLabel="Next tutorial step"
-                    showIcon={canNextManually}
                     className={step >= 6 ? "min-h-[80px] text-center" : "min-h-[80px]"}
                   />
                 </motion.div>
               </AnimatePresence>
-              {step === 7 ? (
-                <Button
-                  type="button"
-                  variant="primary"
-                  className="mt-2 w-full justify-center"
-                  onClick={finishTutorial}
-                >
-                  Start game
-                </Button>
-              ) : null}
               {hintError && step >= 3 && step <= 6 ? (
                 <p className="mt-2 rounded bg-game-feedback-error py-1 text-center font-sf-compact-display text-base font-semibold leading-none text-white">
                   {hintError}
                 </p>
               ) : null}
             </div>
-            {showGuessFooter ? (
-              <footer className="shrink-0 animate-slide-up-footer border-t border-game-border-surface-level1 bg-game-surface-base-level0 p-4">
-                <Button
-                  type="submit"
-                  form={guessFormId}
-                  variant="primary"
-                  className="w-full justify-center"
-                  disabled={!guess.trim()}
-                >
-                  Guess
-                </Button>
+
+            <WordDragProvider
+              disabled={step === 7}
+              onDragStart={() => undefined}
+              onDropOnZone={handleDropOnZone}
+              onDropOnCloud={() => undefined}
+              onDropSuccess={() => undefined}
+              onDragCancelFromZone={() => undefined}
+            >
+              <div
+                className={cn(
+                  "flex min-h-0 flex-1 flex-col items-center justify-center gap-0 overflow-y-auto",
+                  reasonCorrect ? "pb-28" : "pb-8",
+                )}
+              >
+                {showCloud ? (
+                  <section className="select-none rounded-t-none rounded-b-2xl bg-game-surface-base-level1 px-1 py-4">
+                    <WordCloud
+                      words={TUTORIAL_CLOUD_WORDS}
+                      cueWord={
+                        step === 3
+                          ? TUTORIAL_HINT.anchorCloudWord
+                          : step === 5
+                            ? TUTORIAL_HINT.rhymeWith
+                            : undefined
+                      }
+                      solvedWords={[]}
+                      placedWords={placedWords}
+                      ghostPlacedWords={ghostPlacedWords}
+                      draggable={step >= 3 && step <= 5}
+                    />
+                  </section>
+                ) : null}
+
+                <form
+                  id={guessFormId}
+                  onSubmit={handleGuessFormSubmit}
+                  className="sr-only"
+                  aria-hidden
+                />
+                <ClueWordFlowPanel
+                  hint={TUTORIAL_HINT}
+                  displayNumber={1}
+                  className={step === 1 ? "mx-2 mt-2 mb-4" : "mx-2 mt-1 mb-4"}
+                  guessFormId={guessFormId}
+                  answerError={step === 6 ? hintError : null}
+                  reasonWord={reasonWord}
+                  onPlaceReasonWord={placeReason}
+                  secondWord={guess}
+                  onSecondWordChange={(value) => {
+                    if (step === 7) return;
+                    setGuess(value);
+                    if (hintError) setHintError(null);
+                  }}
+                  secondWordPlaceholder="Type answer"
+                  rhymeWord={rhymeWord}
+                  onPlaceRhymeWord={placeRhyme}
+                />
+              </div>
+            </WordDragProvider>
+            {showTutorialFooter ? (
+              <footer className="shrink-0 animate-slide-up-footer border-t border-game-border-surface-level1 bg-game-surface-base-level0 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+                {showStartGameFooter ? (
+                  <Button
+                    type="button"
+                    variant="primary"
+                    className="w-full justify-center"
+                    onClick={finishTutorial}
+                  >
+                    Start game
+                  </Button>
+                ) : showGuessFooter ? (
+                  <Button
+                    type="submit"
+                    form={guessFormId}
+                    variant="primary"
+                    className="w-full justify-center"
+                    disabled={!guess.trim()}
+                  >
+                    Guess
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="primary"
+                    className="w-full justify-center"
+                    onClick={handleNext}
+                  >
+                    Next
+                  </Button>
+                )}
               </footer>
             ) : null}
           </div>

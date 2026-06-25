@@ -18,6 +18,8 @@ export type GuessSectionProps = {
   onChange: (value: string) => void;
   onSubmit: () => void;
   error?: string | null;
+  /** Increments on each wrong answer submit to replay shake + focus. */
+  answerRejectSignal?: number;
   formId?: string;
   showSubmitButton?: boolean;
   showBottomConnector?: boolean;
@@ -42,6 +44,7 @@ export function GuessSection({
   onChange,
   onSubmit,
   error,
+  answerRejectSignal = 0,
   formId,
   showSubmitButton = false,
   showBottomConnector = true,
@@ -124,6 +127,7 @@ export function GuessSection({
               onChange={onChange}
               onSubmit={onSubmit}
               error={error}
+              answerRejectSignal={answerRejectSignal}
             />
           </>
         )}

@@ -1,6 +1,7 @@
-import { useId, type FormEvent } from "react";
+import { useId, useRef, type FormEvent } from "react";
 import { Button } from "../../atoms/Button";
 import { cn } from "../../../lib/cn";
+import { useAnswerRejectFeedback } from "../../../lib/useAnswerRejectFeedback";
 
 type GuessInputProps = {
   value: string;
@@ -8,6 +9,8 @@ type GuessInputProps = {
   onSubmit: () => void;
   disabled?: boolean;
   error?: string | null;
+  /** Increments on each wrong answer submit to replay shake + focus. */
+  answerRejectSignal?: number;
   /** When false, use an external submit button via `formId`. */
   showSubmitButton?: boolean;
   formId?: string;
@@ -20,12 +23,15 @@ export function GuessInput({
   onSubmit,
   disabled,
   error,
+  answerRejectSignal = 0,
   showSubmitButton = true,
   formId,
   className,
 }: GuessInputProps) {
   const inputId = useId();
   const errorId = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const answerShaking = useAnswerRejectFeedback(answerRejectSignal, inputRef);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -43,6 +49,7 @@ export function GuessInput({
       </label>
       <div className={cn("flex gap-2", !showSubmitButton && "flex-col")}>
         <input
+          ref={inputRef}
           id={inputId}
           type="text"
           autoComplete="off"
@@ -58,6 +65,7 @@ export function GuessInput({
             "placeholder:text-white/60",
             "focus:border-white focus:ring-2 focus:ring-blue-400",
             error && "border-game-feedback-error",
+            answerShaking && "motion-reduce:animate-none animate-input-reject",
           )}
           onChange={(e) => onChange(e.target.value)}
         />

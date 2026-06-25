@@ -46,6 +46,8 @@ export type WordDropZoneProps = {
   rejecting?: boolean;
   /** Parallel mode: blue 6px frame stroke while this zone is active with Answer. */
   parallelFrameActive?: boolean;
+  /** Empty drop target helper text. */
+  dropZonePlaceholder?: string;
   className?: string;
 };
 
@@ -118,6 +120,7 @@ export function WordDropZone({
   previewWord = null,
   rejecting = false,
   parallelFrameActive = false,
+  dropZonePlaceholder = "Drag a word here",
   className,
 }: WordDropZoneProps) {
   const wordDrag = useWordDrag();
@@ -300,7 +303,7 @@ export function WordDropZone({
             )
           ) : (
             <Text variant="caption" className="select-none text-center font-semibold">
-              Drag a word here
+              {dropZonePlaceholder}
             </Text>
           )}
         </div>

@@ -1,5 +1,9 @@
+import { useEffect, useState } from "react";
 import type { HintDefinition } from "../../../data/game";
 import { cn } from "../../../lib/cn";
+import type { CelebrationIntensity } from "../../../lib/celebrationIntensity";
+import { DEFAULT_CELEBRATION_INTENSITY } from "../../../lib/celebrationIntensity";
+import { ClueCelebrationBurst } from "./ClueCelebrationBurst";
 import { CorrectCheckBadge } from "./CorrectCheckBadge";
 
 export type HintCardProps = {
@@ -12,6 +16,11 @@ export type HintCardProps = {
   onClick?: () => void;
   /** When false, hides the "Clue N" label above the clue text. */
   showClueLabel?: boolean;
+  /** Overrides the default "Clue N" label text. */
+  clueLabelText?: string;
+  /** Non-zero replays the solved-clue particle burst. */
+  celebrateSignal?: number;
+  celebrationIntensity?: CelebrationIntensity;
   className?: string;
 };
 
@@ -28,38 +37,59 @@ export function HintCard({
   solved = false,
   onClick,
   showClueLabel,
+  clueLabelText,
+  celebrateSignal = 0,
+  celebrationIntensity = DEFAULT_CELEBRATION_INTENSITY,
   className,
 }: HintCardProps) {
   const interactive = Boolean(onClick) && !solved;
   const showLabel = showClueLabel ?? (!interactive && !solved);
-  const clueLabel = `Clue ${displayNumber}`;
+  const clueLabel = clueLabelText ?? `Clue ${displayNumber}`;
+
+  // A freshly-solved card (with a celebration) holds its default look briefly,
+  // then eases into the solved style. Already-solved cards on load are instant.
+  const [solvedStyleActive, setSolvedStyleActive] = useState(
+    solved && celebrateSignal === 0,
+  );
+
+  useEffect(() => {
+    if (!solved) {
+      setSolvedStyleActive(false);
+      return;
+    }
+    if (celebrateSignal > 0) {
+      const timer = window.setTimeout(() => setSolvedStyleActive(true), 800);
+      return () => window.clearTimeout(timer);
+    }
+    setSolvedStyleActive(true);
+  }, [solved, celebrateSignal]);
+
+  const inSolveDelay = solved && !solvedStyleActive;
 
   const content = (
     <div className="flex w-full min-w-0 flex-col items-center gap-1">
       {showLabel ? <p className={clueLabelClass}>{clueLabel}</p> : null}
-      {solved ? (
-        <p
-          className={cn(
-            clueTextClass,
-            "w-full text-game-text-component-question-solved",
-          )}
-        >
-          {hint.clueText}
-        </p>
-      ) : (
-        <p className={cn(clueTextClass, "w-full text-game-text-base-primary")}>
-          {hint.clueText}
-        </p>
-      )}
+      <p
+        className={cn(
+          clueTextClass,
+          "w-full transition-colors duration-300",
+          solvedStyleActive
+            ? "text-game-text-component-question-solved"
+            : "text-game-text-base-primary",
+        )}
+      >
+        {hint.clueText}
+      </p>
     </div>
   );
 
   const sharedClass = cn(
-    "flex w-full min-h-[4.5rem] flex-col items-center justify-center rounded-2xl px-2.5 py-3.5 transition-[transform,box-shadow,background-color] duration-150",
-    solved &&
+    "flex w-full min-h-[4.5rem] flex-col items-center justify-center rounded-2xl px-2.5 py-3.5 transition-[transform,box-shadow,background-color,border-color] duration-300",
+    solvedStyleActive &&
       "border border-game-border-component-wordcloudtile bg-game-surface-component-wordcloudtile-hover",
     interactive &&
       "cursor-pointer bg-game-surface-component-wordcloudtileboard-default shadow-question-active hover:scale-[1.01] active:scale-[0.99]",
+    inSolveDelay && "bg-game-surface-component-wordcloudtileboard-default",
     !interactive && !solved && "bg-game-surface-base-level2",
     active && interactive && "ring-2 ring-game-border-component-wordcloudtile ring-offset-1",
     className,
@@ -85,10 +115,29 @@ export function HintCard({
 
   return (
     <li
-      className={cn("relative w-full list-none", sharedClass)}
+      id={solved ? `hint-card-${hint.id}` : undefined}
+      className={cn(
+        "relative z-0 w-full list-none overflow-visible",
+        celebrateSignal > 0 && "z-10",
+        sharedClass,
+      )}
       aria-label={solved ? `Solved: ${hint.clueText}` : undefined}
     >
-      {solved ? <CorrectCheckBadge /> : null}
+      {solved && celebrateSignal > 0 ? (
+        <ClueCelebrationBurst
+          signal={celebrateSignal}
+          intensity={celebrationIntensity}
+        />
+      ) : null}
+      {solved ? (
+        <CorrectCheckBadge
+          className={
+            celebrateSignal > 0
+              ? "motion-reduce:animate-none animate-badge-pop"
+              : undefined
+          }
+        />
+      ) : null}
       {content}
     </li>
   );

@@ -25,12 +25,12 @@ type WordCloudTileProps = {
 
 const variantClass: Record<WordCloudTileVariant, string> = {
   default:
-    "border-2 border-dashed border-game-border-component-wordcloudtile bg-game-surface-component-wordcloudtile-default text-game-text-component-wordcloudtile hover:bg-game-surface-component-wordcloudtile-hover",
+    "border-2 border-solid border-game-border-component-wordcloudtile bg-game-surface-component-wordcloudtile-default text-game-text-component-wordcloudtile hover:bg-game-surface-component-wordcloudtile-hover shadow-lg",
   display: "border border-slate-300 bg-slate-300 text-slate-950",
   highlighted:
     "border border-game-border-action-primary-hover bg-game-surface-component-wordcloudtile-placed text-game-text-base-primary ring-2 ring-game-levels-1/40",
   solved:
-    "border border-game-feedback-success/40 bg-game-feedback-success/10 text-game-feedback-success",
+    "border-0 bg-game-feedback-success/10 text-game-feedback-success shadow-none",
   ghost:
     "pointer-events-none cursor-default border border-dashed border-game-border-surface-level2 bg-game-surface-base-level1 text-game-text-base-tertiary opacity-45 shadow-none",
 };

@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Text } from "../../atoms/Text";
 import { GuessSection } from "../GuessSection";
+import { CorrectDropWord } from "../CorrectDropWord";
+import { RhymesInputDropZone } from "../RhymesInputDropZone";
+import { SimpleWordDropZone } from "../SimpleWordDropZone";
 import { WordDropZone } from "../WordDropZone";
 
 export function WordDropZoneShowcase() {
@@ -8,6 +11,8 @@ export function WordDropZoneShowcase() {
   const [reasonWord, setReasonWord] = useState<string | null>(null);
   const [rhymeWord, setRhymeWord] = useState<string | null>("MOLD");
   const [rhymesDisabled, setRhymesDisabled] = useState(true);
+  const [secondWord, setSecondWord] = useState("");
+  const [rhymesInputWord, setRhymesInputWord] = useState<string | null>(null);
 
   return (
     <div className="w-full">
@@ -38,6 +43,44 @@ export function WordDropZoneShowcase() {
             onChange={() => undefined}
             disabled
           />
+        </div>
+
+        <div className="mt-6 border-t border-game-border-surface-level1 px-4 pt-6">
+          <Text variant="caption" className="mb-3 block">
+            Simple drop zone (flat, no outer frame)
+          </Text>
+          <SimpleWordDropZone
+            zoneId="reason"
+            label="Reason"
+            value={null}
+            onChange={() => undefined}
+          />
+        </div>
+
+        <div className="mt-6 border-t border-game-border-surface-level1 px-4 pt-6">
+          <Text variant="caption" className="mb-3 block">
+            Correct drop word (compact)
+          </Text>
+          <CorrectDropWord word="GREAT" />
+        </div>
+
+        <div className="mt-6 border-t border-game-border-surface-level1 px-4 pt-6">
+          <Text variant="caption" className="mb-3 block">
+            Rhymes input 3.0 (active)
+          </Text>
+          <RhymesInputDropZone
+            secondWord={secondWord}
+            onSecondWordChange={setSecondWord}
+            rhymeWord={rhymesInputWord}
+            onRhymeWordChange={setRhymesInputWord}
+          />
+        </div>
+
+        <div className="mt-6 border-t border-game-border-surface-level1 px-4 pt-6">
+          <Text variant="caption" className="mb-3 block">
+            Rhymes input 3.0 (disabled)
+          </Text>
+          <RhymesInputDropZone disabled />
         </div>
 
         <div className="mt-6 border-t border-game-border-surface-level1 px-4 pt-6">
