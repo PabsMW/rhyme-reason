@@ -29,6 +29,8 @@ export type RhymesInputDropZoneProps = {
   rejecting?: boolean;
   /** Green success chip when the dropped rhyme word is correct. */
   correct?: boolean;
+  /** Render the typed answer as a correct green chip instead of the input. */
+  answerCorrect?: boolean;
   /** Associates the answer input with the modal Guess form. */
   guessFormId?: string;
   /** Shown when the typed answer is incorrect. */
@@ -75,6 +77,7 @@ export function RhymesInputDropZone({
   previewWord = null,
   rejecting = false,
   correct = false,
+  answerCorrect = false,
   guessFormId,
   answerError = null,
   answerRejectSignal = 0,
@@ -109,12 +112,12 @@ export function RhymesInputDropZone({
   const isDropHighlighted = canHighlightDrop && (dragOver || pointerDragOver);
 
   useEffect(() => {
-    if (disabled) return;
+    if (disabled || answerCorrect) return;
     const focusTimer = window.setTimeout(() => {
       inputRef.current?.focus({ preventScroll: true });
     }, 320);
     return () => window.clearTimeout(focusTimer);
-  }, [disabled]);
+  }, [disabled, answerCorrect]);
 
   const successPop = {
     initial: prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.92 },
@@ -186,6 +189,9 @@ export function RhymesInputDropZone({
         className,
       )}
     >
+      {answerCorrect && secondWord ? (
+        <CorrectDropWord word={secondWord} />
+      ) : (
       <div className="rhymes-drop-zone-glow w-[200px] overflow-visible">
         <div
           className={cn(
@@ -213,8 +219,8 @@ export function RhymesInputDropZone({
             aria-describedby={answerError ? errorId : undefined}
             onChange={(event) => onSecondWordChange?.(event.target.value)}
             className={cn(
-              "h-full w-full rounded-[inherit] bg-transparent px-3 text-center font-inter text-lg font-bold tracking-wide text-slate-700 outline-none",
-              "placeholder:text-slate-500",
+              "h-full w-full rounded-[inherit] bg-transparent px-3 text-center font-inter text-lg font-bold tracking-wide text-slate-700 uppercase outline-none",
+              "placeholder:text-slate-500 placeholder:normal-case",
             )}
           />
         </div>
@@ -228,6 +234,7 @@ export function RhymesInputDropZone({
           </p>
         ) : null}
       </div>
+      )}
 
       <motion.div
         className="absolute inset-x-0 top-full -mt-[1px] flex flex-col items-center overflow-visible"

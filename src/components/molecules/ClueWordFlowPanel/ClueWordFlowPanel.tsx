@@ -38,6 +38,8 @@ export type ClueWordFlowPanelProps = {
   guessFormId?: string;
   /** Shown when the typed answer is incorrect. */
   answerError?: string | null;
+  /** Render the typed answer as a correct green chip instead of the input. */
+  answerCorrect?: boolean;
   /** Increments on each wrong answer submit to replay shake + focus. */
   answerRejectSignal?: number;
   /** Increments when Check is tapped before a step is complete. */
@@ -58,7 +60,7 @@ export function ClueWordFlowPanel({
   reasonWord = null,
   onReasonWordChange,
   onPlaceReasonWord,
-  reasonDropPlaceholder = "Drag first word",
+  reasonDropPlaceholder = "Drag word here",
   secondWord = "",
   onSecondWordChange,
   rhymeWord = null,
@@ -75,6 +77,7 @@ export function ClueWordFlowPanel({
   onRhymeDropSuccess,
   guessFormId,
   answerError = null,
+  answerCorrect = false,
   answerRejectSignal = 0,
   checkCueSignal = 0,
   checkCueTargets = [],
@@ -167,6 +170,7 @@ export function ClueWordFlowPanel({
             dropZonePlaceholder={rhymeDropPlaceholder}
             guessFormId={guessFormId}
             answerError={answerError}
+            answerCorrect={answerCorrect}
             answerRejectSignal={answerRejectSignal}
             checkCueSignal={checkCueSignal}
             checkCueTargets={checkCueTargets}

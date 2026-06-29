@@ -3,14 +3,22 @@ import { cn } from "../../../lib/cn";
 type HowToPlayMessageProps = {
   prefix?: string;
   highlight?: string;
+  middle?: string;
+  highlight2?: string;
   suffix?: string;
+  highlight3?: string;
+  suffix2?: string;
   className?: string;
 };
 
 export function HowToPlayMessage({
   prefix = "Each ",
   highlight = "clue",
+  middle,
+  highlight2,
   suffix = " has an answer you have to guess.",
+  highlight3,
+  suffix2,
   className,
 }: HowToPlayMessageProps) {
   return (
@@ -23,7 +31,17 @@ export function HowToPlayMessage({
       <p className="w-full break-words whitespace-pre-line text-center font-sf-pro text-lg font-bold leading-normal text-slate-700">
         <span>{prefix}</span>
         <span className="text-yellow-600">{highlight}</span>
-        <span>{suffix}</span>
+        {middle ? <span>{middle}</span> : null}
+        {highlight2 ? <span className="text-yellow-600">{highlight2}</span> : null}
+        {highlight3 ? (
+          <span className="mt-[21px] block">
+            <span>{suffix}</span>
+            <span className="text-yellow-600">{highlight3}</span>
+            {suffix2 ? <span>{suffix2}</span> : null}
+          </span>
+        ) : (
+          <span>{suffix}</span>
+        )}
       </p>
     </div>
   );

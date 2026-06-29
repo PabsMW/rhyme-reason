@@ -44,7 +44,7 @@ export function SimpleWordDropZone({
   previewWord = null,
   rejecting = false,
   cueShaking = false,
-  dropZonePlaceholder = "Drag first word",
+  dropZonePlaceholder = "Drag word here",
   className,
 }: SimpleWordDropZoneProps) {
   const wordDrag = useWordDrag();

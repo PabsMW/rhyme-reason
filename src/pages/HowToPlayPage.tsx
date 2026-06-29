@@ -15,6 +15,12 @@ import { parseGameSettings, pathWithGameSettings } from "../lib/gameSettings";
 
 type TutorialStep = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
+const TUTORIAL_STEP_COUNT = 4;
+
+function displayStepNumber(step: TutorialStep): number {
+  return Math.min(step, TUTORIAL_STEP_COUNT);
+}
+
 const TUTORIAL_HINT: HintDefinition = {
   id: "how-to-play-1",
   clueText: "A breed of big dog",
@@ -25,70 +31,88 @@ const TUTORIAL_HINT: HintDefinition = {
 const TUTORIAL_CLOUD_WORDS = ["GREAT", "LANE"];
 const TUTORIAL_ANSWER = "DANE";
 
-function isExpectedReasonWord(word: string): boolean {
-  return word.trim().toUpperCase() === TUTORIAL_HINT.anchorCloudWord;
+const PRACTICE_HINT: HintDefinition = {
+  id: "how-to-play-practice",
+  clueText: "The highest prize at the Olympics",
+  anchorCloudWord: "GOLD",
+  rhymeWith: "PEDAL",
+};
+
+const PRACTICE_CLOUD_WORDS = ["GOLD", "PEDAL"];
+const PRACTICE_ANSWER = "MEDAL";
+
+function isExpectedReasonWord(word: string, hint: HintDefinition): boolean {
+  return word.trim().toUpperCase() === hint.anchorCloudWord;
 }
 
-function isExpectedRhymeWord(word: string): boolean {
-  return word.trim().toUpperCase() === TUTORIAL_HINT.rhymeWith;
+function isExpectedRhymeWord(word: string, hint: HintDefinition): boolean {
+  return word.trim().toUpperCase() === hint.rhymeWith;
 }
 
-function isExpectedAnswer(word: string): boolean {
-  return word.trim().toUpperCase() === TUTORIAL_ANSWER;
+function isExpectedAnswer(word: string, answer: string): boolean {
+  return word.trim().toUpperCase() === answer;
 }
 
 function messageForStep(step: TutorialStep): {
   prefix: string;
   highlight: string;
+  middle?: string;
+  highlight2?: string;
   suffix: string;
+  highlight3?: string;
+  suffix2?: string;
 } {
   if (step === 1) {
     return {
-      prefix: "Each ",
-      highlight: "clue",
-      suffix: " has an answer you have to guess.",
+      prefix: "In Rhyme & Reason, you ",
+      highlight: "SOLVE CLUES",
+      suffix: " to win!",
     };
   }
   if (step === 2) {
     return {
-      prefix: "We give you ",
-      highlight: "words",
-      suffix: " to help you guess that answer.",
+      prefix: "You need two words to answer a clue\nOne you ",
+      highlight: "DRAG",
+      middle: ", and one you ",
+      highlight2: "TYPE",
+      suffix: "Drag ",
+      highlight3: "Great",
+      suffix2: " to the first spot",
     };
   }
   if (step === 3) {
     return {
-      prefix:
-        'Find the word that best goes with the clue. "Great" is similar to "Big".\nDrag "',
-      highlight: "GREAT",
-      suffix: '" in the box.',
+      prefix: "Type ",
+      highlight: "Dane",
+      suffix: " in the second",
     };
   }
   if (step === 4) {
     return {
-      prefix: '"A breed of big dog" and "Great" ... ',
-      highlight: "Dane",
-      suffix: ' can be the answer. Type "Dane" in the answer.',
+      prefix:
+        "But there's a twist! To fully solve a clue, you also have to select a word that ",
+      highlight: "RHYMES",
+      suffix: " with the word you type.",
     };
   }
   if (step === 5) {
     return {
-      prefix: '"Lane" does rhyme with "',
+      prefix: 'Click "Check" to see if ',
       highlight: "Dane",
-      suffix: '". Drag "Lane" to the "Rhymes with" box.',
+      suffix: " is correct",
     };
   }
-  if (step === 6) {
+  if (step === 7) {
     return {
-      prefix: 'Check if "',
-      highlight: "Dane",
-      suffix: '" is correct. Click "Guess"',
+      prefix: "Full ",
+      highlight: "Practice",
+      suffix: " Screen",
     };
   }
   return {
     prefix: "",
-    highlight: "Nice work!",
-    suffix: " Now you are ready to play.",
+    highlight: "Nice Work!",
+    suffix: "",
   };
 }
 
@@ -103,15 +127,29 @@ export function HowToPlayPage() {
   const [rhymeWord, setRhymeWord] = useState<string | null>(null);
   const [guess, setGuess] = useState("");
   const [hintError, setHintError] = useState<string | null>(null);
+  const [practiceAnswerError, setPracticeAnswerError] = useState<string | null>(null);
+  const [practiceWrongAttempts, setPracticeWrongAttempts] = useState(0);
+  const [answerRejectSignal, setAnswerRejectSignal] = useState(0);
   const prefersReducedMotion = useReducedMotion();
 
-  const showNextFooter = step === 1 || step === 2;
-  const showCloud = step >= 2;
-  const showGuessFooter = step === 6;
-  const showStartGameFooter = step === 7;
-  const showTutorialFooter = showNextFooter || showGuessFooter || showStartGameFooter;
-  const reasonCorrect = reasonWord ? isExpectedReasonWord(reasonWord) : false;
-  const rhymeCorrect = rhymeWord ? isExpectedRhymeWord(rhymeWord) : false;
+  const isPractice = step === 7;
+  const activeHint = isPractice ? PRACTICE_HINT : TUTORIAL_HINT;
+
+  const showNextFooter = step === 1;
+  const showCloud = step === 2 || step === 4 || isPractice;
+  const showCluePanel = step >= 2;
+  const reasonCorrect = reasonWord
+    ? isExpectedReasonWord(reasonWord, activeHint)
+    : false;
+  const rhymeCorrect = rhymeWord
+    ? isExpectedRhymeWord(rhymeWord, activeHint)
+    : false;
+  const canCheck = isPractice
+    ? reasonCorrect && rhymeCorrect && Boolean(guess.trim())
+    : Boolean(guess.trim());
+  const showCheckFooter = step === 5 || isPractice;
+  const showStartGameFooter = step === 6;
+  const showTutorialFooter = showNextFooter || showCheckFooter || showStartGameFooter;
 
   const placedWords = [reasonWord, rhymeWord].filter(
     (word): word is string => word !== null,
@@ -122,6 +160,42 @@ export function HowToPlayPage() {
   ].filter((word): word is string => word !== null);
 
   const message = useMemo(() => messageForStep(step), [step]);
+  const displayMessage = useMemo(() => {
+    if (isPractice && practiceWrongAttempts >= 2) {
+      return {
+        prefix: "Not quite - the answer is ",
+        highlight: "MEDAL",
+        suffix: ".",
+      };
+    }
+    return message;
+  }, [isPractice, message, practiceWrongAttempts]);
+  const isIntroStep = step === 1;
+
+  const animatedMessage = (
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.div
+        key={`how-to-play-message-${step}${practiceWrongAttempts >= 2 ? "-reveal" : ""}`}
+        initial={
+          prefersReducedMotion ? { opacity: 0 } : { opacity: 0, x: -12 }
+        }
+        animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, x: 0 }}
+        exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, x: 12 }}
+        transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <HowToPlayMessage
+          prefix={displayMessage.prefix}
+          highlight={displayMessage.highlight}
+          middle={displayMessage.middle}
+          highlight2={displayMessage.highlight2}
+          suffix={displayMessage.suffix}
+          highlight3={displayMessage.highlight3}
+          suffix2={displayMessage.suffix2}
+          className={step >= 5 ? "min-h-[80px] text-center" : "min-h-[80px]"}
+        />
+      </motion.div>
+    </AnimatePresence>
+  );
 
   const finishTutorial = useCallback(() => {
     markOnboardingComplete();
@@ -137,39 +211,68 @@ export function HowToPlayPage() {
 
   const handleNext = useCallback(() => {
     setHintError(null);
-    setStep((prev) => {
-      if (prev === 1) return 2;
-      if (prev === 2) return 3;
-      return prev;
-    });
+    setStep((prev) => (prev === 1 ? 2 : prev));
+  }, []);
+
+  const startPractice = useCallback(() => {
+    setReasonWord(null);
+    setRhymeWord(null);
+    setGuess("");
+    setHintError(null);
+    setPracticeAnswerError(null);
+    setPracticeWrongAttempts(0);
+    setAnswerRejectSignal(0);
+    setStep(7);
   }, []);
 
   const placeReason = useCallback(
     (word: string): boolean => {
-      if (step < 3 || step > 3) return false;
-      if (!isExpectedReasonWord(word)) {
-        setHintError("Try GREAT in Reason.");
-        return false;
+      if (step === 2) {
+        if (!isExpectedReasonWord(word, TUTORIAL_HINT)) {
+          setHintError("Try GREAT in Reason.");
+          return false;
+        }
+        setReasonWord(TUTORIAL_HINT.anchorCloudWord);
+        setHintError(null);
+        setStep(3);
+        return true;
       }
-      setReasonWord(TUTORIAL_HINT.anchorCloudWord);
-      setHintError(null);
-      setStep(4);
-      return true;
+      if (step === 7) {
+        if (!isExpectedReasonWord(word, PRACTICE_HINT)) {
+          setHintError("Try GOLD in Reason.");
+          return false;
+        }
+        setReasonWord(PRACTICE_HINT.anchorCloudWord);
+        setHintError(null);
+        return true;
+      }
+      return false;
     },
     [step],
   );
 
   const placeRhyme = useCallback(
     (word: string): boolean => {
-      if (step !== 5) return false;
-      if (!isExpectedRhymeWord(word)) {
-        setHintError("Try LANE in Rhymes with.");
-        return false;
+      if (step === 4) {
+        if (!isExpectedRhymeWord(word, TUTORIAL_HINT)) {
+          setHintError("Try LANE in Rhymes with.");
+          return false;
+        }
+        setRhymeWord(TUTORIAL_HINT.rhymeWith);
+        setHintError(null);
+        setStep(5);
+        return true;
       }
-      setRhymeWord(TUTORIAL_HINT.rhymeWith);
-      setHintError(null);
-      setStep(6);
-      return true;
+      if (step === 7) {
+        if (!isExpectedRhymeWord(word, PRACTICE_HINT)) {
+          setHintError("Try PEDAL in Rhymes with.");
+          return false;
+        }
+        setRhymeWord(PRACTICE_HINT.rhymeWith);
+        setHintError(null);
+        return true;
+      }
+      return false;
     },
     [step],
   );
@@ -183,15 +286,34 @@ export function HowToPlayPage() {
   );
 
   const handleSubmit = useCallback(() => {
-    if (step !== 6) return;
-    if (!isExpectedAnswer(guess)) {
-      setHintError("Close - try DANE.");
+    if (step === 5) {
+      if (!isExpectedAnswer(guess, TUTORIAL_ANSWER)) {
+        setHintError("Close - try DANE.");
+        return;
+      }
+      setHintError(null);
+      setGuess(TUTORIAL_ANSWER);
+      setStep(6);
       return;
     }
-    setHintError(null);
-    setGuess(TUTORIAL_ANSWER);
-    setStep(7);
-  }, [guess, step]);
+    if (step === 7) {
+      if (!reasonCorrect || !rhymeCorrect) return;
+      if (!isExpectedAnswer(guess, PRACTICE_ANSWER)) {
+        const nextAttempts = practiceWrongAttempts + 1;
+        setPracticeWrongAttempts(nextAttempts);
+        if (nextAttempts === 1) {
+          setPracticeAnswerError("Wrong answer");
+          setAnswerRejectSignal((n) => n + 1);
+        } else {
+          setPracticeAnswerError(null);
+        }
+        return;
+      }
+      setHintError(null);
+      setPracticeAnswerError(null);
+      finishTutorial();
+    }
+  }, [finishTutorial, guess, practiceWrongAttempts, reasonCorrect, rhymeCorrect, step]);
 
   const handleGuessFormSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
@@ -202,18 +324,28 @@ export function HowToPlayPage() {
   );
 
   useEffect(() => {
-    if (step !== 4) return;
-    const focusTimer = window.setTimeout(() => {
-      panelRef.current?.querySelector<HTMLInputElement>("input")?.focus();
-    }, 0);
-    return () => window.clearTimeout(focusTimer);
+    if (step !== 3) return;
+    let frame = 0;
+    let attempts = 0;
+    const tryFocus = () => {
+      const input = panelRef.current?.querySelector<HTMLInputElement>("input");
+      if (input) {
+        input.focus({ preventScroll: true });
+        return;
+      }
+      if (attempts++ < 40) {
+        frame = window.requestAnimationFrame(tryFocus);
+      }
+    };
+    frame = window.requestAnimationFrame(tryFocus);
+    return () => window.cancelAnimationFrame(frame);
   }, [step]);
 
   useEffect(() => {
-    if (step !== 4) return;
-    if (!isExpectedAnswer(guess)) return;
+    if (step !== 3) return;
+    if (!isExpectedAnswer(guess, TUTORIAL_ANSWER)) return;
     const advanceTimer = window.setTimeout(() => {
-      setStep((prev) => (prev === 4 ? 5 : prev));
+      setStep((prev) => (prev === 3 ? 4 : prev));
     }, 250);
     return () => window.clearTimeout(advanceTimer);
   }, [guess, step]);
@@ -222,10 +354,13 @@ export function HowToPlayPage() {
     <div className="flex min-h-dvh flex-col bg-game-surface-base-level0">
       <div className="fixed inset-0 bg-black/40 backdrop-blur-[10px]" />
       <div className="relative z-10 mx-auto flex min-h-dvh w-full max-w-[540px] items-center justify-center p-2.5">
-        <div className="w-full">
+        <div className="w-full min-h-[350px]">
           <div
             ref={panelRef}
-            className="relative flex max-h-[90dvh] w-full min-h-0 flex-col overflow-hidden rounded-2xl border border-game-border-surface-level2 bg-slate-200 shadow-[0_12px_40px_rgba(0,0,0,0.18)]"
+            className={cn(
+              "relative flex max-h-[90dvh] w-full flex-col overflow-hidden rounded-2xl border border-game-border-surface-level2 bg-slate-200 shadow-[0_12px_40px_rgba(0,0,0,0.18)]",
+              isIntroStep ? "min-h-[350px]" : "min-h-0",
+            )}
           >
             <header className="grid shrink-0 grid-cols-3 items-center gap-2 border-b border-game-border-surface-level1 bg-game-surface-base-level0 py-2 pl-4 pr-2">
               <Text
@@ -240,7 +375,7 @@ export function HowToPlayPage() {
                 variant="subtitle"
                 className="justify-self-center text-center font-sf-pro-rounded text-base font-semibold"
               >
-                Step {step <= 6 ? step : 6} of 6
+                Step {displayStepNumber(step)} of {TUTORIAL_STEP_COUNT}
               </Text>
               <Button
                 variant="secondary"
@@ -253,121 +388,130 @@ export function HowToPlayPage() {
               </Button>
             </header>
 
-            <div className="relative z-10 shrink-0 border-b border-game-border-surface-level1 bg-game-surface-base-level1 px-2.5 pb-2.5 pt-2.5">
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={`how-to-play-message-${step}`}
-                  initial={
-                    prefersReducedMotion
-                      ? { opacity: 0 }
-                      : { opacity: 0, x: -12 }
-                  }
-                  animate={
-                    prefersReducedMotion
-                      ? { opacity: 1 }
-                      : { opacity: 1, x: 0 }
-                  }
-                  exit={
-                    prefersReducedMotion
-                      ? { opacity: 0 }
-                      : { opacity: 0, x: 12 }
-                  }
-                  transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                >
-                  <HowToPlayMessage
-                    prefix={message.prefix}
-                    highlight={message.highlight}
-                    suffix={message.suffix}
-                    className={step >= 6 ? "min-h-[80px] text-center" : "min-h-[80px]"}
-                  />
-                </motion.div>
-              </AnimatePresence>
-              {hintError && step >= 3 && step <= 6 ? (
-                <p className="mt-2 rounded bg-game-feedback-error py-1 text-center font-sf-compact-display text-base font-semibold leading-none text-white">
-                  {hintError}
-                </p>
-              ) : null}
-            </div>
-
-            <WordDragProvider
-              disabled={step === 7}
-              onDragStart={() => undefined}
-              onDropOnZone={handleDropOnZone}
-              onDropOnCloud={() => undefined}
-              onDropSuccess={() => undefined}
-              onDragCancelFromZone={() => undefined}
-            >
-              <div
-                className={cn(
-                  "flex min-h-0 flex-1 flex-col items-center justify-center gap-0 overflow-y-auto",
-                  reasonCorrect ? "pb-28" : "pb-8",
-                )}
-              >
-                {showCloud ? (
-                  <section className="select-none rounded-t-none rounded-b-2xl bg-game-surface-base-level1 px-1 py-4">
-                    <WordCloud
-                      words={TUTORIAL_CLOUD_WORDS}
-                      cueWord={
-                        step === 3
-                          ? TUTORIAL_HINT.anchorCloudWord
-                          : step === 5
-                            ? TUTORIAL_HINT.rhymeWith
-                            : undefined
-                      }
-                      solvedWords={[]}
-                      placedWords={placedWords}
-                      ghostPlacedWords={ghostPlacedWords}
-                      draggable={step >= 3 && step <= 5}
-                    />
-                  </section>
-                ) : null}
-
-                <form
-                  id={guessFormId}
-                  onSubmit={handleGuessFormSubmit}
-                  className="sr-only"
-                  aria-hidden
-                />
-                <ClueWordFlowPanel
-                  hint={TUTORIAL_HINT}
-                  displayNumber={1}
-                  className={step === 1 ? "mx-2 mt-2 mb-4" : "mx-2 mt-1 mb-4"}
-                  guessFormId={guessFormId}
-                  answerError={step === 6 ? hintError : null}
-                  reasonWord={reasonWord}
-                  onPlaceReasonWord={placeReason}
-                  secondWord={guess}
-                  onSecondWordChange={(value) => {
-                    if (step === 7) return;
-                    setGuess(value);
-                    if (hintError) setHintError(null);
-                  }}
-                  secondWordPlaceholder="Type answer"
-                  rhymeWord={rhymeWord}
-                  onPlaceRhymeWord={placeRhyme}
-                />
+            {isIntroStep ? (
+              <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-2.5">
+                {animatedMessage}
               </div>
-            </WordDragProvider>
+            ) : (
+              <>
+                <div className="relative z-10 shrink-0 border-b border-game-border-surface-level1 bg-game-surface-base-level1 px-2.5 pb-2.5 pt-2.5">
+                  {animatedMessage}
+                  {hintError && step >= 2 && step <= 7 ? (
+                    <p className="mt-2 rounded bg-game-feedback-error py-1 text-center font-sf-compact-display text-base font-semibold leading-none text-white">
+                      {hintError}
+                    </p>
+                  ) : null}
+                </div>
+
+                <WordDragProvider
+                  disabled={step === 6}
+                  key={isPractice ? "practice" : "tutorial"}
+                  onDragStart={() => undefined}
+                  onDropOnZone={handleDropOnZone}
+                  onDropOnCloud={() => undefined}
+                  onDropSuccess={() => undefined}
+                  onDragCancelFromZone={() => undefined}
+                >
+                  <div
+                    className={cn(
+                      "flex min-h-0 flex-1 flex-col items-center justify-center gap-0 overflow-y-auto",
+                      reasonCorrect ? "pb-28" : "pb-8",
+                    )}
+                  >
+                    {showCloud ? (
+                      <section className="select-none rounded-t-none rounded-b-2xl bg-game-surface-base-level1 px-1 py-4">
+                        <WordCloud
+                          words={
+                            isPractice
+                              ? PRACTICE_CLOUD_WORDS
+                              : step === 2
+                                ? [TUTORIAL_HINT.anchorCloudWord, TUTORIAL_HINT.rhymeWith]
+                                : step === 4
+                                  ? [TUTORIAL_HINT.anchorCloudWord, TUTORIAL_HINT.rhymeWith]
+                                  : TUTORIAL_CLOUD_WORDS
+                          }
+                          cueWord={
+                            isPractice
+                              ? !reasonCorrect
+                                ? PRACTICE_HINT.anchorCloudWord
+                                : !rhymeCorrect
+                                  ? PRACTICE_HINT.rhymeWith
+                                  : undefined
+                              : step === 2
+                                ? TUTORIAL_HINT.anchorCloudWord
+                                : step === 4
+                                  ? TUTORIAL_HINT.rhymeWith
+                                  : undefined
+                          }
+                          solvedWords={[]}
+                          placedWords={placedWords}
+                          ghostPlacedWords={
+                            isPractice
+                              ? []
+                              : step === 2
+                                ? [TUTORIAL_HINT.rhymeWith, ...ghostPlacedWords]
+                                : ghostPlacedWords
+                          }
+                          draggable={(step >= 2 && step <= 4) || isPractice}
+                        />
+                      </section>
+                    ) : null}
+
+                    <form
+                      id={guessFormId}
+                      onSubmit={handleGuessFormSubmit}
+                      className="sr-only"
+                      aria-hidden
+                    />
+                    {showCluePanel ? (
+                      <ClueWordFlowPanel
+                        hint={activeHint}
+                        displayNumber={1}
+                        className={step === 2 ? "mx-2 mt-2 mb-4" : "mx-2 mt-1 mb-4"}
+                        guessFormId={guessFormId}
+                        answerError={
+                          step === 5 ? hintError : isPractice ? practiceAnswerError : null
+                        }
+                        answerRejectSignal={isPractice ? answerRejectSignal : 0}
+                        answerCorrect={step === 6}
+                        reasonWord={reasonWord}
+                        onPlaceReasonWord={placeReason}
+                        secondWord={guess}
+                        onSecondWordChange={(value) => {
+                          if (step === 6) return;
+                          setGuess(value);
+                          if (hintError) setHintError(null);
+                          if (practiceAnswerError) setPracticeAnswerError(null);
+                        }}
+                        secondWordPlaceholder="Type answer"
+                        rhymeWord={rhymeWord}
+                        onPlaceRhymeWord={placeRhyme}
+                      />
+                    ) : null}
+                  </div>
+                </WordDragProvider>
+              </>
+            )}
             {showTutorialFooter ? (
-              <footer className="shrink-0 animate-slide-up-footer border-t border-game-border-surface-level1 bg-game-surface-base-level0 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+              <footer className="shrink-0 border-t border-game-border-surface-level1 bg-game-surface-base-level0 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
                 {showStartGameFooter ? (
                   <Button
                     type="button"
                     variant="primary"
                     className="w-full justify-center"
-                    onClick={finishTutorial}
+                    onClick={startPractice}
                   >
-                    Start game
+                    Next
                   </Button>
-                ) : showGuessFooter ? (
+                ) : showCheckFooter ? (
                   <Button
                     type="submit"
                     form={guessFormId}
                     variant="primary"
                     className="w-full justify-center"
-                    disabled={!guess.trim()}
+                    disabled={!canCheck}
                   >
-                    Guess
+                    Check
                   </Button>
                 ) : (
                   <Button
