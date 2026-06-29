@@ -104,9 +104,9 @@ function messageForStep(step: TutorialStep): {
   }
   if (step === 7) {
     return {
-      prefix: "Full ",
-      highlight: "Practice",
-      suffix: " Screen",
+      prefix: "",
+      highlight: "Practice Puzzle",
+      suffix: " - drag and type words to solve it!",
     };
   }
   return {
