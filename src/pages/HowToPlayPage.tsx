@@ -13,12 +13,53 @@ import { cn } from "../lib/cn";
 import { markOnboardingComplete } from "../lib/onboarding";
 import { parseGameSettings, pathWithGameSettings } from "../lib/gameSettings";
 
-type TutorialStep = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+type TutorialStep = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
-const TUTORIAL_STEP_COUNT = 4;
+const TUTORIAL_STEP_COUNT = 6;
+
+const SLIDE_EASE = [0.22, 1, 0.36, 1] as const;
+
+function slideBodyMotion(
+  prefersReducedMotion: boolean | null,
+  variant: "centered" | "interactive",
+) {
+  if (prefersReducedMotion) {
+    return {
+      initial: { opacity: 0 },
+      animate: { opacity: 1 },
+      exit: { opacity: 0 },
+      transition: { duration: 0.2 },
+    };
+  }
+  if (variant === "centered") {
+    return {
+      initial: { opacity: 0, y: 20 },
+      animate: { opacity: 1, y: 0 },
+      exit: { opacity: 0, y: -12 },
+      transition: { duration: 0.3, ease: SLIDE_EASE },
+    };
+  }
+  return {
+    initial: { opacity: 0, y: 12 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -20 },
+    transition: { duration: 0.26, ease: SLIDE_EASE },
+  };
+}
+
+function footerButtonKey(step: TutorialStep): string {
+  if (step === 8) return "play";
+  if (step === 6) return "next-nice-work";
+  if (step === 5 || step === 7) return "check";
+  if (step === 1) return "next-intro";
+  return "next";
+}
 
 function displayStepNumber(step: TutorialStep): number {
-  return Math.min(step, TUTORIAL_STEP_COUNT);
+  if (step >= 8) return 6;
+  if (step >= 7) return 5;
+  if (step >= 4) return 4;
+  return step;
 }
 
 const TUTORIAL_HINT: HintDefinition = {
@@ -104,9 +145,16 @@ function messageForStep(step: TutorialStep): {
   }
   if (step === 7) {
     return {
-      prefix: "",
-      highlight: "Practice Puzzle",
-      suffix: " - drag and type words to solve it!",
+      prefix: "Full ",
+      highlight: "Practice",
+      suffix: " Screen",
+    };
+  }
+  if (step === 8) {
+    return {
+      prefix: "Solve all of today's clues to win!",
+      highlight: "",
+      suffix: "",
     };
   }
   return {
@@ -137,7 +185,8 @@ export function HowToPlayPage() {
 
   const showNextFooter = step === 1;
   const showCloud = step === 2 || step === 4 || isPractice;
-  const showCluePanel = step >= 2;
+  const showCluePanel = step >= 2 && step <= 7;
+  const isCenteredMessageStep = step === 1 || step === 8;
   const reasonCorrect = reasonWord
     ? isExpectedReasonWord(reasonWord, activeHint)
     : false;
@@ -149,7 +198,9 @@ export function HowToPlayPage() {
     : Boolean(guess.trim());
   const showCheckFooter = step === 5 || isPractice;
   const showStartGameFooter = step === 6;
-  const showTutorialFooter = showNextFooter || showCheckFooter || showStartGameFooter;
+  const showPlayFooter = step === 8;
+  const showTutorialFooter =
+    showNextFooter || showCheckFooter || showStartGameFooter || showPlayFooter;
 
   const placedWords = [reasonWord, rhymeWord].filter(
     (word): word is string => word !== null,
@@ -170,7 +221,6 @@ export function HowToPlayPage() {
     }
     return message;
   }, [isPractice, message, practiceWrongAttempts]);
-  const isIntroStep = step === 1;
 
   const animatedMessage = (
     <AnimatePresence mode="wait" initial={false}>
@@ -191,7 +241,13 @@ export function HowToPlayPage() {
           suffix={displayMessage.suffix}
           highlight3={displayMessage.highlight3}
           suffix2={displayMessage.suffix2}
-          className={step >= 5 ? "min-h-[80px] text-center" : "min-h-[80px]"}
+          className={
+            isCenteredMessageStep
+              ? "min-h-[80px]"
+              : step >= 5
+                ? "min-h-[80px] text-center"
+                : "min-h-[80px]"
+          }
         />
       </motion.div>
     </AnimatePresence>
@@ -311,9 +367,9 @@ export function HowToPlayPage() {
       }
       setHintError(null);
       setPracticeAnswerError(null);
-      finishTutorial();
+      setStep(8);
     }
-  }, [finishTutorial, guess, practiceWrongAttempts, reasonCorrect, rhymeCorrect, step]);
+  }, [guess, practiceWrongAttempts, reasonCorrect, rhymeCorrect, step]);
 
   const handleGuessFormSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
@@ -355,12 +411,14 @@ export function HowToPlayPage() {
       <div className="fixed inset-0 bg-black/40 backdrop-blur-[10px]" />
       <div className="relative z-10 mx-auto flex min-h-dvh w-full max-w-[540px] items-center justify-center p-2.5">
         <div className="w-full min-h-[350px]">
-          <div
+          <motion.div
             ref={panelRef}
+            layout
             className={cn(
               "relative flex max-h-[90dvh] w-full flex-col overflow-hidden rounded-2xl border border-game-border-surface-level2 bg-slate-200 shadow-[0_12px_40px_rgba(0,0,0,0.18)]",
-              isIntroStep ? "min-h-[350px]" : "min-h-0",
+              isCenteredMessageStep ? "min-h-[350px]" : "min-h-0",
             )}
+            transition={{ layout: { duration: 0.32, ease: SLIDE_EASE } }}
           >
             <header className="grid shrink-0 grid-cols-3 items-center gap-2 border-b border-game-border-surface-level1 bg-game-surface-base-level0 py-2 pl-4 pr-2">
               <Text
@@ -370,13 +428,24 @@ export function HowToPlayPage() {
               >
                 Tutorial
               </Text>
-              <Text
-                as="h2"
-                variant="subtitle"
-                className="justify-self-center text-center font-sf-pro-rounded text-base font-semibold"
-              >
-                Step {displayStepNumber(step)} of {TUTORIAL_STEP_COUNT}
-              </Text>
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.span
+                  key={displayStepNumber(step)}
+                  initial={
+                    prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 6 }
+                  }
+                  animate={
+                    prefersReducedMotion ? { opacity: 1 } : { opacity: 1, y: 0 }
+                  }
+                  exit={
+                    prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -6 }
+                  }
+                  transition={{ duration: 0.22, ease: SLIDE_EASE }}
+                  className="justify-self-center text-center font-sf-pro-rounded text-base font-semibold"
+                >
+                  Step {displayStepNumber(step)} of {TUTORIAL_STEP_COUNT}
+                </motion.span>
+              </AnimatePresence>
               <Button
                 variant="secondary"
                 size="sm"
@@ -388,144 +457,183 @@ export function HowToPlayPage() {
               </Button>
             </header>
 
-            {isIntroStep ? (
-              <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-2.5">
-                {animatedMessage}
-              </div>
-            ) : (
-              <>
-                <div className="relative z-10 shrink-0 border-b border-game-border-surface-level1 bg-game-surface-base-level1 px-2.5 pb-2.5 pt-2.5">
-                  {animatedMessage}
-                  {hintError && step >= 2 && step <= 7 ? (
-                    <p className="mt-2 rounded bg-game-feedback-error py-1 text-center font-sf-compact-display text-base font-semibold leading-none text-white">
-                      {hintError}
-                    </p>
-                  ) : null}
-                </div>
-
-                <WordDragProvider
-                  disabled={step === 6}
-                  key={isPractice ? "practice" : "tutorial"}
-                  onDragStart={() => undefined}
-                  onDropOnZone={handleDropOnZone}
-                  onDropOnCloud={() => undefined}
-                  onDropSuccess={() => undefined}
-                  onDragCancelFromZone={() => undefined}
-                >
-                  <div
-                    className={cn(
-                      "flex min-h-0 flex-1 flex-col items-center justify-center gap-0 overflow-y-auto",
-                      reasonCorrect ? "pb-28" : "pb-8",
-                    )}
+            <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+              <AnimatePresence mode="wait" initial={false}>
+                {isCenteredMessageStep ? (
+                  <motion.div
+                    key="centered-body"
+                    className="flex min-h-0 flex-1 flex-col items-center justify-center px-2.5"
+                    {...slideBodyMotion(prefersReducedMotion, "centered")}
                   >
-                    {showCloud ? (
-                      <section className="select-none rounded-t-none rounded-b-2xl bg-game-surface-base-level1 px-1 py-4">
-                        <WordCloud
-                          words={
-                            isPractice
-                              ? PRACTICE_CLOUD_WORDS
-                              : step === 2
-                                ? [TUTORIAL_HINT.anchorCloudWord, TUTORIAL_HINT.rhymeWith]
-                                : step === 4
-                                  ? [TUTORIAL_HINT.anchorCloudWord, TUTORIAL_HINT.rhymeWith]
-                                  : TUTORIAL_CLOUD_WORDS
-                          }
-                          cueWord={
-                            isPractice
-                              ? !reasonCorrect
-                                ? PRACTICE_HINT.anchorCloudWord
-                                : !rhymeCorrect
-                                  ? PRACTICE_HINT.rhymeWith
-                                  : undefined
-                              : step === 2
-                                ? TUTORIAL_HINT.anchorCloudWord
-                                : step === 4
-                                  ? TUTORIAL_HINT.rhymeWith
-                                  : undefined
-                          }
-                          solvedWords={[]}
-                          placedWords={placedWords}
-                          ghostPlacedWords={
-                            isPractice
-                              ? []
-                              : step === 2
-                                ? [TUTORIAL_HINT.rhymeWith, ...ghostPlacedWords]
-                                : ghostPlacedWords
-                          }
-                          draggable={(step >= 2 && step <= 4) || isPractice}
-                        />
-                      </section>
-                    ) : null}
+                    {animatedMessage}
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="interactive-body"
+                    className="flex min-h-0 flex-1 flex-col overflow-hidden"
+                    {...slideBodyMotion(prefersReducedMotion, "interactive")}
+                  >
+                    <div className="relative z-10 shrink-0 border-b border-game-border-surface-level1 bg-game-surface-base-level1 px-2.5 pb-2.5 pt-2.5">
+                      {animatedMessage}
+                      {hintError && step >= 2 && step <= 7 ? (
+                        <p className="mt-2 rounded bg-game-feedback-error py-1 text-center font-sf-compact-display text-base font-semibold leading-none text-white">
+                          {hintError}
+                        </p>
+                      ) : null}
+                    </div>
 
-                    <form
-                      id={guessFormId}
-                      onSubmit={handleGuessFormSubmit}
-                      className="sr-only"
-                      aria-hidden
-                    />
-                    {showCluePanel ? (
-                      <ClueWordFlowPanel
-                        hint={activeHint}
-                        displayNumber={1}
-                        className={step === 2 ? "mx-2 mt-2 mb-4" : "mx-2 mt-1 mb-4"}
-                        guessFormId={guessFormId}
-                        answerError={
-                          step === 5 ? hintError : isPractice ? practiceAnswerError : null
-                        }
-                        answerRejectSignal={isPractice ? answerRejectSignal : 0}
-                        answerCorrect={step === 6}
-                        reasonWord={reasonWord}
-                        onPlaceReasonWord={placeReason}
-                        secondWord={guess}
-                        onSecondWordChange={(value) => {
-                          if (step === 6) return;
-                          setGuess(value);
-                          if (hintError) setHintError(null);
-                          if (practiceAnswerError) setPracticeAnswerError(null);
-                        }}
-                        secondWordPlaceholder="Type answer"
-                        rhymeWord={rhymeWord}
-                        onPlaceRhymeWord={placeRhyme}
-                      />
-                    ) : null}
-                  </div>
-                </WordDragProvider>
-              </>
-            )}
+                    <WordDragProvider
+                      disabled={step === 6}
+                      key={isPractice ? "practice" : "tutorial"}
+                      onDragStart={() => undefined}
+                      onDropOnZone={handleDropOnZone}
+                      onDropOnCloud={() => undefined}
+                      onDropSuccess={() => undefined}
+                      onDragCancelFromZone={() => undefined}
+                    >
+                      <div
+                        className={cn(
+                          "flex min-h-0 flex-1 flex-col items-center justify-center gap-0 overflow-y-auto",
+                          reasonCorrect && (step >= 4 || isPractice) ? "pb-28" : "pb-8",
+                        )}
+                      >
+                        {showCloud ? (
+                          <section className="select-none rounded-t-none rounded-b-2xl bg-game-surface-base-level1 px-1 py-4">
+                            <WordCloud
+                              words={
+                                isPractice
+                                  ? PRACTICE_CLOUD_WORDS
+                                  : step === 2
+                                    ? [TUTORIAL_HINT.anchorCloudWord, TUTORIAL_HINT.rhymeWith]
+                                    : step === 4
+                                      ? [TUTORIAL_HINT.anchorCloudWord, TUTORIAL_HINT.rhymeWith]
+                                      : TUTORIAL_CLOUD_WORDS
+                              }
+                              cueWord={
+                                isPractice
+                                  ? !reasonCorrect
+                                    ? PRACTICE_HINT.anchorCloudWord
+                                    : !rhymeCorrect
+                                      ? PRACTICE_HINT.rhymeWith
+                                      : undefined
+                                  : step === 2
+                                    ? TUTORIAL_HINT.anchorCloudWord
+                                    : step === 4
+                                      ? TUTORIAL_HINT.rhymeWith
+                                      : undefined
+                              }
+                              solvedWords={[]}
+                              placedWords={placedWords}
+                              ghostPlacedWords={
+                                isPractice
+                                  ? []
+                                  : step === 2
+                                    ? [TUTORIAL_HINT.rhymeWith, ...ghostPlacedWords]
+                                    : ghostPlacedWords
+                              }
+                              draggable={(step >= 2 && step <= 4) || isPractice}
+                            />
+                          </section>
+                        ) : null}
+
+                        <form
+                          id={guessFormId}
+                          onSubmit={handleGuessFormSubmit}
+                          className="sr-only"
+                          aria-hidden
+                        />
+                        {showCluePanel ? (
+                          <ClueWordFlowPanel
+                            hint={activeHint}
+                            displayNumber={1}
+                            className={step === 2 ? "mx-2 mt-2 mb-4" : "mx-2 mt-1 mb-4"}
+                            guessFormId={guessFormId}
+                            answerError={
+                              step === 5 ? hintError : isPractice ? practiceAnswerError : null
+                            }
+                            answerRejectSignal={isPractice ? answerRejectSignal : 0}
+                            answerCorrect={step === 6}
+                            reasonWord={reasonWord}
+                            onPlaceReasonWord={placeReason}
+                            secondWord={guess}
+                            onSecondWordChange={(value) => {
+                              if (step === 6) return;
+                              setGuess(value);
+                              if (hintError) setHintError(null);
+                              if (practiceAnswerError) setPracticeAnswerError(null);
+                            }}
+                            secondWordPlaceholder="Type answer"
+                            rhymeWord={rhymeWord}
+                            onPlaceRhymeWord={placeRhyme}
+                            showRhymeDropZone={step >= 4}
+                          />
+                        ) : null}
+                      </div>
+                    </WordDragProvider>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
             {showTutorialFooter ? (
               <footer className="shrink-0 border-t border-game-border-surface-level1 bg-game-surface-base-level0 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-                {showStartGameFooter ? (
-                  <Button
-                    type="button"
-                    variant="primary"
-                    className="w-full justify-center"
-                    onClick={startPractice}
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    key={footerButtonKey(step)}
+                    className="w-full"
+                    initial={
+                      prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 10 }
+                    }
+                    animate={
+                      prefersReducedMotion ? { opacity: 1 } : { opacity: 1, y: 0 }
+                    }
+                    exit={
+                      prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -10 }
+                    }
+                    transition={{ duration: 0.22, ease: SLIDE_EASE }}
                   >
-                    Next
-                  </Button>
-                ) : showCheckFooter ? (
-                  <Button
-                    type="submit"
-                    form={guessFormId}
-                    variant="primary"
-                    className="w-full justify-center"
-                    disabled={!canCheck}
-                  >
-                    Check
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="primary"
-                    className="w-full justify-center"
-                    onClick={handleNext}
-                  >
-                    Next
-                  </Button>
-                )}
+                    {showPlayFooter ? (
+                      <Button
+                        type="button"
+                        variant="primary"
+                        className="w-full justify-center"
+                        onClick={finishTutorial}
+                      >
+                        Play
+                      </Button>
+                    ) : showStartGameFooter ? (
+                      <Button
+                        type="button"
+                        variant="primary"
+                        className="w-full justify-center"
+                        onClick={startPractice}
+                      >
+                        Next
+                      </Button>
+                    ) : showCheckFooter ? (
+                      <Button
+                        type="submit"
+                        form={guessFormId}
+                        variant="primary"
+                        className="w-full justify-center"
+                        disabled={!canCheck}
+                      >
+                        Check
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="primary"
+                        className="w-full justify-center"
+                        onClick={handleNext}
+                      >
+                        Next
+                      </Button>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
               </footer>
             ) : null}
-          </div>
+          </motion.div>
         </div>
       </div>
     </div>

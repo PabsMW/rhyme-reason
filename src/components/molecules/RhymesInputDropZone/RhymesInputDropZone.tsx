@@ -40,6 +40,8 @@ export type RhymesInputDropZoneProps = {
   /** Increments when Check is tapped before this step is complete. */
   checkCueSignal?: number;
   checkCueTargets?: CheckCueTarget[];
+  /** When false, only the answer input is shown (no connector or rhyme drop zone). */
+  showRhymeDropZone?: boolean;
   className?: string;
 };
 
@@ -83,6 +85,7 @@ export function RhymesInputDropZone({
   answerRejectSignal = 0,
   checkCueSignal = 0,
   checkCueTargets = [],
+  showRhymeDropZone = true,
   className,
 }: RhymesInputDropZoneProps) {
   const prefersReducedMotion = useReducedMotion();
@@ -236,75 +239,83 @@ export function RhymesInputDropZone({
       </div>
       )}
 
-      <motion.div
-        className="absolute inset-x-0 top-full -mt-[1px] flex flex-col items-center overflow-visible"
-        initial={
-          prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.98 }
-        }
-        animate={
-          prefersReducedMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }
-        }
-        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1], delay: 0.06 }}
-      >
-        <RhymesInputConnector />
-
-        <div className="rhymes-drop-zone-glow w-full overflow-visible">
-          <section
-            data-word-drop-zone="rhymes"
-            onDragOver={handleDragOver}
-            onDragEnter={handleDragEnter}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            aria-label={
-              rejecting
-                ? "Rhymes with: incorrect word"
-                : showCorrect && rhymeWord
-                  ? `Rhymes with: ${rhymeWord}, correct`
-                  : displayValue
-                    ? `Rhymes with: ${displayValue}`
-                    : "Rhymes with word drop zone"
+      <AnimatePresence initial={false}>
+        {showRhymeDropZone ? (
+          <motion.div
+            key="rhyme-drop-zone"
+            className="absolute inset-x-0 top-full -mt-[1px] flex flex-col items-center overflow-visible"
+            initial={
+              prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.98 }
             }
-            className="relative z-0 flex w-full flex-col items-center gap-1.5 rounded-2xl border-4 border-yellow-400 bg-slate-50 p-2.5"
+            animate={
+              prefersReducedMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }
+            }
+            exit={
+              prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.98 }
+            }
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1], delay: 0.06 }}
           >
-            <p className="font-sf-compact-display text-sm font-bold uppercase tracking-wide text-yellow-800">
-              Rhymes with
-            </p>
-            <AnimatePresence mode="wait" initial={false}>
-              {showCorrect && rhymeWord ? (
-                <motion.div key="rhyme-correct" {...successPop}>
-                  <CorrectDropWord word={rhymeWord} />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="rhyme-drop"
-                  className={cn(
-                    "flex h-[45px] w-[200px] items-center justify-center rounded-lg border-2 border-dashed border-yellow-500 bg-[#fff372] px-2 transition-[transform,background-color,border-color] duration-200",
-                    isDropHighlighted &&
-                      "scale-[1.02] border-solid border-game-feedback-success bg-game-feedback-success/10",
-                    rejecting &&
-                      "border-solid border-game-border-surface-level2 motion-reduce:animate-none animate-zone-reject",
-                    rhymeCueShaking && "motion-reduce:animate-none animate-input-reject",
-                  )}
-                >
-                  {displayValue ? (
-                    showRejectPreview ? (
-                      <span data-reject-preview="rhymes" className="inline-flex">
-                        <WordCloudTile word={displayValue} variant="highlighted" />
-                      </span>
-                    ) : (
-                      <WordCloudTile word={displayValue} variant="highlighted" />
-                    )
+            <RhymesInputConnector />
+
+            <div className="rhymes-drop-zone-glow w-full overflow-visible">
+              <section
+                data-word-drop-zone="rhymes"
+                onDragOver={handleDragOver}
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                aria-label={
+                  rejecting
+                    ? "Rhymes with: incorrect word"
+                    : showCorrect && rhymeWord
+                      ? `Rhymes with: ${rhymeWord}, correct`
+                      : displayValue
+                        ? `Rhymes with: ${displayValue}`
+                        : "Rhymes with word drop zone"
+                }
+                className="relative z-0 flex w-full flex-col items-center gap-1.5 rounded-2xl border-4 border-yellow-400 bg-slate-50 p-2.5"
+              >
+                <p className="font-sf-compact-display text-sm font-bold uppercase tracking-wide text-yellow-800">
+                  Rhymes with
+                </p>
+                <AnimatePresence mode="wait" initial={false}>
+                  {showCorrect && rhymeWord ? (
+                    <motion.div key="rhyme-correct" {...successPop}>
+                      <CorrectDropWord word={rhymeWord} />
+                    </motion.div>
                   ) : (
-                    <p className="text-center font-inter text-lg font-bold text-slate-600">
-                      {dropZonePlaceholder}
-                    </p>
+                    <motion.div
+                      key="rhyme-drop"
+                      className={cn(
+                        "flex h-[45px] w-[200px] items-center justify-center rounded-lg border-2 border-dashed border-yellow-500 bg-[#fff372] px-2 transition-[transform,background-color,border-color] duration-200",
+                        isDropHighlighted &&
+                          "scale-[1.02] border-solid border-game-feedback-success bg-game-feedback-success/10",
+                        rejecting &&
+                          "border-solid border-game-border-surface-level2 motion-reduce:animate-none animate-zone-reject",
+                        rhymeCueShaking && "motion-reduce:animate-none animate-input-reject",
+                      )}
+                    >
+                      {displayValue ? (
+                        showRejectPreview ? (
+                          <span data-reject-preview="rhymes" className="inline-flex">
+                            <WordCloudTile word={displayValue} variant="highlighted" />
+                          </span>
+                        ) : (
+                          <WordCloudTile word={displayValue} variant="highlighted" />
+                        )
+                      ) : (
+                        <p className="text-center font-inter text-lg font-bold text-slate-600">
+                          {dropZonePlaceholder}
+                        </p>
+                      )}
+                    </motion.div>
                   )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </section>
-        </div>
-      </motion.div>
+                </AnimatePresence>
+              </section>
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }

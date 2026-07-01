@@ -24,7 +24,7 @@ export function HowToPlayMessage({
   return (
     <div
       className={cn(
-        "flex items-center justify-center gap-2 overflow-clip rounded-2xl border-6 border-slate-200 bg-white pl-2.5 pr-2.5 py-2.5 shadow-[0_25px_25px_rgba(0,0,0,0.15)]",
+        "flex min-w-[340px] items-center justify-center gap-2 overflow-clip rounded-2xl border-6 border-slate-200 bg-white pl-2.5 pr-2.5 py-2.5 shadow-[0_25px_25px_rgba(0,0,0,0.15)]",
         className,
       )}
     >

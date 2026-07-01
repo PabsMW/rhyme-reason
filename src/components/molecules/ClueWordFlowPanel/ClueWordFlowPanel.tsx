@@ -45,6 +45,8 @@ export type ClueWordFlowPanelProps = {
   /** Increments when Check is tapped before a step is complete. */
   checkCueSignal?: number;
   checkCueTargets?: CheckCueTarget[];
+  /** When false, only the answer input is shown (no connector or rhyme drop zone). */
+  showRhymeDropZone?: boolean;
   className?: string;
 };
 
@@ -81,6 +83,7 @@ export function ClueWordFlowPanel({
   answerRejectSignal = 0,
   checkCueSignal = 0,
   checkCueTargets = [],
+  showRhymeDropZone = true,
   className,
 }: ClueWordFlowPanelProps) {
   const prefersReducedMotion = useReducedMotion();
@@ -174,6 +177,7 @@ export function ClueWordFlowPanel({
             answerRejectSignal={answerRejectSignal}
             checkCueSignal={checkCueSignal}
             checkCueTargets={checkCueTargets}
+            showRhymeDropZone={showRhymeDropZone}
             interactionLocked={interactionLocked}
             previewWord={rhymePreviewWord}
             rejecting={rhymeRejecting}
