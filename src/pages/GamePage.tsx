@@ -6,14 +6,14 @@ import { GuessModal } from "../components/molecules/GuessModal";
 import { HintCard } from "../components/molecules/HintCard";
 import { WordCloud } from "../components/molecules/WordCloud";
 import {
-  SEED_GAME,
-  activeCloud,
+  displayCloud,
   getAnswerForHint,
   getLevel,
   usedCloudWords,
   type ClueSubmission,
   type RunState,
 } from "../data/game";
+import { getPuzzleGame } from "../data/puzzles";
 import { getCelebrationDuration } from "../lib/celebrationIntensity";
 import { loadRun, recordCheck, recordMove, submitClue } from "../lib/gameRun";
 import { parseGameSettings, pathWithGameSettings, usesCheckScoring } from "../lib/gameSettings";
@@ -22,7 +22,11 @@ export function GamePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const gameSettings = parseGameSettings(searchParams.toString());
-  const [run, setRun] = useState<RunState>(() => loadRun(SEED_GAME, gameSettings));
+  const game = useMemo(
+    () => getPuzzleGame(gameSettings.puzzle),
+    [gameSettings.puzzle],
+  );
+  const [run, setRun] = useState<RunState>(() => loadRun(game, gameSettings));
   const [selectedHintId, setSelectedHintId] = useState<string | null>(null);
   const [guess, setGuess] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -33,8 +37,8 @@ export function GamePage() {
   const delayedWinNavigateRef = useRef(false);
   const winNavigateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const levelDef = useMemo(() => getLevel(SEED_GAME, run.level), [run.level]);
-  const cloud = useMemo(() => activeCloud(SEED_GAME, levelDef), [levelDef]);
+  const levelDef = useMemo(() => getLevel(game, run.level), [game, run.level]);
+  const cloud = useMemo(() => displayCloud(game, levelDef), [game, levelDef]);
   const cloudWordsUsed = useMemo(
     () => usedCloudWords(levelDef, run.solvedHintIds),
     [levelDef, run.solvedHintIds],

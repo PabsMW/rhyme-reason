@@ -1,3 +1,5 @@
+import { PUZZLE_IDS, type PuzzleId } from "../data/puzzles";
+
 export type LevelsToWin = 1 | 2 | 3;
 
 export type SolveFlow =
@@ -7,27 +9,33 @@ export type SolveFlow =
   | "parallel-3"
   | "no-rails";
 
+export type { PuzzleId };
+
 export type GameSettings = {
   levelsToWin: LevelsToWin;
   solveFlow: SolveFlow;
   alwaysShowTutorial: boolean;
+  puzzle: PuzzleId;
 };
 
 export const DEFAULT_GAME_SETTINGS: GameSettings = {
   levelsToWin: 3,
   solveFlow: "sequential",
   alwaysShowTutorial: false,
+  puzzle: "easy",
 };
 
 const LEVELS_PARAM = "levels";
 const FLOW_PARAM = "flow";
 const TUTORIAL_PARAM = "tutorial";
+const PUZZLE_PARAM = "puzzle";
 
 export function parseGameSettings(search: string): GameSettings {
   const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
   const levelsRaw = params.get(LEVELS_PARAM);
   const flowRaw = params.get(FLOW_PARAM);
   const tutorialRaw = params.get(TUTORIAL_PARAM);
+  const puzzleRaw = params.get(PUZZLE_PARAM);
 
   let levelsToWin: LevelsToWin = DEFAULT_GAME_SETTINGS.levelsToWin;
   if (levelsRaw === "1" || levelsRaw === "2" || levelsRaw === "3") {
@@ -47,7 +55,12 @@ export function parseGameSettings(search: string): GameSettings {
 
   const alwaysShowTutorial = tutorialRaw === "always";
 
-  return { levelsToWin, solveFlow, alwaysShowTutorial };
+  let puzzle: PuzzleId = DEFAULT_GAME_SETTINGS.puzzle;
+  if (puzzleRaw === "easy" || puzzleRaw === "medium" || puzzleRaw === "hard") {
+    puzzle = puzzleRaw;
+  }
+
+  return { levelsToWin, solveFlow, alwaysShowTutorial, puzzle };
 }
 
 export function buildGameSettingsSearch(settings: GameSettings): string {
@@ -59,12 +72,22 @@ export function buildGameSettingsSearch(settings: GameSettings): string {
   if (settings.alwaysShowTutorial !== DEFAULT_GAME_SETTINGS.alwaysShowTutorial) {
     params.set(TUTORIAL_PARAM, "always");
   }
+  if (settings.puzzle !== DEFAULT_GAME_SETTINGS.puzzle) {
+    params.set(PUZZLE_PARAM, settings.puzzle);
+  }
   return `?${params.toString()}`;
 }
 
 export function pathWithGameSettings(path: string, settings: GameSettings): string {
   const base = path.split("?")[0] ?? path;
   return `${base}${buildGameSettingsSearch(settings)}`;
+}
+
+export function settingsWithPuzzle(
+  settings: GameSettings,
+  puzzle: PuzzleId,
+): GameSettings {
+  return { ...settings, puzzle };
 }
 
 export function buildShareablePlayUrl(settings: GameSettings): string {
@@ -76,6 +99,8 @@ export function buildShareableHomeUrl(settings: GameSettings): string {
 }
 
 export const LEVELS_TO_WIN_OPTIONS: LevelsToWin[] = [1, 2, 3];
+
+export const PUZZLE_OPTIONS: PuzzleId[] = PUZZLE_IDS;
 
 export const SOLVE_FLOW_OPTIONS: SolveFlow[] = [
   "sequential",
@@ -121,6 +146,12 @@ export function usesCheckScoring(flow: SolveFlow): boolean {
   return flow === "no-rails";
 }
 
+export function puzzleLabel(puzzle: PuzzleId): string {
+  if (puzzle === "easy") return "Easy";
+  if (puzzle === "medium") return "Medium";
+  return "Hard";
+}
+
 export function gameSettingsSummary(settings: GameSettings): string {
-  return `${solveFlowLabel(settings.solveFlow)} : ${levelsToWinLabel(settings.levelsToWin)}`;
+  return `${puzzleLabel(settings.puzzle)} : ${solveFlowLabel(settings.solveFlow)} : ${levelsToWinLabel(settings.levelsToWin)}`;
 }

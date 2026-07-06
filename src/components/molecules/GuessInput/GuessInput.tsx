@@ -1,6 +1,7 @@
 import { useId, useRef, type FormEvent } from "react";
 import { Button } from "../../atoms/Button";
 import { cn } from "../../../lib/cn";
+import { handleAnswerInputEnterKey } from "../../../lib/dismissKeyboard";
 import { useAnswerRejectFeedback } from "../../../lib/useAnswerRejectFeedback";
 
 type GuessInputProps = {
@@ -68,6 +69,7 @@ export function GuessInput({
             answerShaking && "motion-reduce:animate-none animate-input-reject",
           )}
           onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(event) => handleAnswerInputEnterKey(event, onSubmit)}
         />
         {showSubmitButton ? (
           <Button type="submit" variant="primary" disabled={disabled || !value.trim()}>

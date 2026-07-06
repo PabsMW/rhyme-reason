@@ -43,6 +43,8 @@ export type ClueWordFlowPanelProps = {
   /** Increments when Check is tapped before a step is complete. */
   checkCueSignal?: number;
   checkCueTargets?: CheckCueTarget[];
+  /** Desktop Enter — triggers Check; mobile Enter dismisses keyboard only. */
+  onAnswerEnter?: () => void;
   /** When false, only the answer input is shown (no connector or rhyme drop zone). */
   showRhymeDropZone?: boolean;
   /** Validate on Check — words stay in zones until checked; chips lock on correct Check. */
@@ -88,6 +90,7 @@ export function ClueWordFlowPanel({
   answerRejectSignal = 0,
   checkCueSignal = 0,
   checkCueTargets = [],
+  onAnswerEnter,
   showRhymeDropZone = true,
   validateOnCheck = false,
   reasonLocked = false,
@@ -200,6 +203,7 @@ export function ClueWordFlowPanel({
             answerRejectSignal={answerRejectSignal}
             checkCueSignal={checkCueSignal}
             checkCueTargets={checkCueTargets}
+            onEnterSubmit={onAnswerEnter}
             showRhymeDropZone={showRhymeDropZone}
             interactionLocked={interactionLocked}
             previewWord={rhymePreviewWord}

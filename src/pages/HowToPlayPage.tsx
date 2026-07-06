@@ -957,6 +957,7 @@ export function HowToPlayPage() {
                             rhymeWord={rhymeWord}
                             onPlaceRhymeWord={placeRhyme}
                             showRhymeDropZone={step >= 4}
+                            onAnswerEnter={handleCheckClick}
                           />
                         ) : null}
                       </div>

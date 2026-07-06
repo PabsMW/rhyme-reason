@@ -2,7 +2,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useId, useRef, useState, useEffect, type DragEvent, type KeyboardEvent } from "react";
 import { WordCloudTile } from "../../atoms/WordCloudTile";
 import { cn } from "../../../lib/cn";
-import { dismissKeyboard } from "../../../lib/dismissKeyboard";
+import { handleAnswerInputEnterKey } from "../../../lib/dismissKeyboard";
 import { useAnswerRejectFeedback } from "../../../lib/useAnswerRejectFeedback";
 import { useCueShake, type CheckCueTarget } from "../../../lib/useCueShake";
 import { CorrectDropWord } from "../CorrectDropWord";
@@ -39,6 +39,8 @@ export type RhymesInputDropZoneProps = {
   /** Increments when Check is tapped before this step is complete. */
   checkCueSignal?: number;
   checkCueTargets?: CheckCueTarget[];
+  /** Desktop Enter — triggers Check; mobile Enter dismisses keyboard only. */
+  onEnterSubmit?: () => void;
   /** When false, only the answer input is shown (no connector or rhyme drop zone). */
   showRhymeDropZone?: boolean;
   className?: string;
@@ -83,6 +85,7 @@ export function RhymesInputDropZone({
   answerRejectSignal = 0,
   checkCueSignal = 0,
   checkCueTargets = [],
+  onEnterSubmit,
   showRhymeDropZone = true,
   className,
 }: RhymesInputDropZoneProps) {
@@ -106,6 +109,12 @@ export function RhymesInputDropZone({
   const pointerDragOver =
     Boolean(wordDrag?.draggingWord) && wordDrag?.hoverTarget === "rhymes";
   const isDropHighlighted = canHighlightDrop && (dragOver || pointerDragOver);
+  const placedTileDraggable =
+    Boolean(rhymeWord) && !showCorrect && !showRejectPreview && !interactionLocked;
+  const placedDragBind =
+    wordDrag && placedTileDraggable && rhymeWord
+      ? wordDrag.bindTile(rhymeWord, { kind: "zone", zoneId: "rhymes" })
+      : undefined;
 
   useEffect(() => {
     if (disabled || answerCorrect) return;
@@ -162,9 +171,7 @@ export function RhymesInputDropZone({
   };
 
   const handleInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key !== "Enter") return;
-    event.preventDefault();
-    dismissKeyboard();
+    handleAnswerInputEnterKey(event, () => onEnterSubmit?.());
   };
 
   if (disabled) {
@@ -305,7 +312,15 @@ export function RhymesInputDropZone({
                             <WordCloudTile word={displayValue} variant="highlighted" />
                           </span>
                         ) : (
-                          <WordCloudTile word={displayValue} variant="highlighted" />
+                          <WordCloudTile
+                            word={displayValue}
+                            variant="highlighted"
+                            dragBind={placedDragBind}
+                            dragSourceHidden={
+                              wordDrag?.draggingWord?.toLowerCase() ===
+                              displayValue.toLowerCase()
+                            }
+                          />
                         )
                       ) : (
                         <p className="text-center font-inter text-lg font-bold text-slate-600">

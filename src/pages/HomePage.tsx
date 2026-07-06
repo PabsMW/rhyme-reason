@@ -3,7 +3,7 @@ import { FaGear } from "react-icons/fa6";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "../components/atoms/Button";
 import { Text } from "../components/atoms/Text";
-import { SEED_GAME } from "../data/game";
+import { getPuzzleGame } from "../data/puzzles";
 import { clearRun } from "../lib/gameRun";
 import { hasCompletedOnboarding } from "../lib/onboarding";
 import { cn } from "../lib/cn";
@@ -106,6 +106,7 @@ export function HomePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const gameSettings = parseGameSettings(searchParams.toString());
+  const game = getPuzzleGame(gameSettings.puzzle);
 
   const handlePlay = () => {
     clearRun();
@@ -125,7 +126,7 @@ export function HomePage() {
       </div>
       <div className="mx-auto flex w-full max-w-[540px] flex-1 flex-col items-center justify-center px-4 pb-10 text-center">
         <Text as="h1" variant="title">
-          {SEED_GAME.title}
+          {game.title}
         </Text>
         <Text className="mt-2 font-sf-pro-rounded text-sm text-slate-500">
           {gameSettingsSummary(gameSettings)}

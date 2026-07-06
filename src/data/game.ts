@@ -1,3 +1,11 @@
+import {
+  EASY_PUZZLE,
+  HARD_PUZZLE,
+  MEDIUM_PUZZLE,
+  getPuzzleGame,
+  type PuzzleId,
+} from "./puzzles";
+
 export type HintDefinition = {
   id: string;
   clueText: string;
@@ -124,10 +132,15 @@ export const SEED_GAME: GameDefinition = {
   ],
 };
 
+const PUZZLE_REGISTRY = [EASY_PUZZLE, MEDIUM_PUZZLE, HARD_PUZZLE];
+
 export function getGameById(id: string): GameDefinition | undefined {
   if (id === SEED_GAME.id) return SEED_GAME;
-  return undefined;
+  return PUZZLE_REGISTRY.find((puzzle) => puzzle.id === id);
 }
+
+export { getPuzzleGame, type PuzzleId };
+export { EASY_PUZZLE, MEDIUM_PUZZLE, HARD_PUZZLE };
 
 export function getLevel(def: GameDefinition, level: 1 | 2 | 3): LevelDefinition {
   const found = def.levels.find((l) => l.level === level);
@@ -163,6 +176,26 @@ export function activeCloud(game: GameDefinition, level: LevelDefinition): strin
   if (level.level === 1) return level.authoredCloudWords ?? [];
   if (level.level === 2) return [...getLevel(game, 1).answers];
   return [...getLevel(game, 2).answers];
+}
+
+/** Hint anchor/rhyme words that must stay draggable even when they match a typed answer. */
+function hintCloudWords(level: LevelDefinition): Set<string> {
+  return new Set(
+    level.hints.flatMap((hint) => [hint.anchorCloudWord, hint.rhymeWith]).map(norm),
+  );
+}
+
+/**
+ * Words shown in the word cloud. Typed answer connectors are omitted unless they
+ * are also a hint anchor or rhyme tile for the current level.
+ */
+export function displayCloud(game: GameDefinition, level: LevelDefinition): string[] {
+  const hintWords = hintCloudWords(level);
+  return activeCloud(game, level).filter((word) => {
+    const isAnswer = level.answers.some((answer) => norm(answer) === norm(word));
+    if (!isAnswer) return true;
+    return hintWords.has(norm(word));
+  });
 }
 
 export function validateClue(

@@ -2,9 +2,16 @@ import { useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "../components/atoms/Button";
 import { Text } from "../components/atoms/Text";
-import { SEED_GAME } from "../data/game";
+import { getPuzzleGame, PUZZLE_IDS, puzzleIdFromGameId } from "../data/puzzles";
 import { clearRun, loadRun } from "../lib/gameRun";
-import { levelsToWinLabel, parseGameSettings, pathWithGameSettings } from "../lib/gameSettings";
+import {
+  levelsToWinLabel,
+  parseGameSettings,
+  pathWithGameSettings,
+  puzzleLabel,
+  settingsWithPuzzle,
+  type PuzzleId,
+} from "../lib/gameSettings";
 
 export function ResultPage() {
   const navigate = useNavigate();
@@ -13,22 +20,39 @@ export function ResultPage() {
     () => parseGameSettings(searchParams.toString()),
     [searchParams],
   );
-  const run = loadRun(SEED_GAME, gameSettings);
+  const game = useMemo(
+    () => getPuzzleGame(gameSettings.puzzle),
+    [gameSettings.puzzle],
+  );
+  const run = loadRun(game, gameSettings);
   const levelsLabel = levelsToWinLabel(run.levelsToWin);
+  const completedPuzzle =
+    puzzleIdFromGameId(run.gameId) ?? gameSettings.puzzle;
 
-  const handlePlayAgain = () => {
+  const handlePlayPuzzle = (puzzle: PuzzleId) => {
     clearRun();
-    navigate(pathWithGameSettings("/play", gameSettings));
+    navigate(pathWithGameSettings("/play", settingsWithPuzzle(gameSettings, puzzle)));
   };
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center bg-game-surface-base-level0 px-4">
-      <div className="w-full max-w-[540px] text-center">
+    <div className="flex min-h-dvh flex-col bg-game-surface-base-level0">
+      <div className="mx-auto flex w-full max-w-[540px] justify-end px-4 pt-4">
+        <Button
+          variant="secondary"
+          size="sm"
+          type="button"
+          onClick={() => navigate(pathWithGameSettings("/", gameSettings))}
+        >
+          Home
+        </Button>
+      </div>
+      <div className="mx-auto flex w-full max-w-[540px] flex-1 flex-col items-center justify-center px-4 pb-10 text-center">
         <Text as="h1" variant="title">
           You did it!
         </Text>
         <Text variant="body" className="mt-4">
-          All {run.solvedAnswers.length} words solved across {levelsLabel}.
+          All {run.solvedAnswers.length} words solved across {levelsLabel} on the{" "}
+          {puzzleLabel(completedPuzzle)} puzzle.
         </Text>
         <ul className="mt-6 flex flex-wrap justify-center gap-2">
           {run.solvedAnswers.map((word) => (
@@ -41,16 +65,22 @@ export function ResultPage() {
           ))}
         </ul>
         <div className="mt-10 flex flex-col items-center gap-3">
-          <Button variant="primary" type="button" onClick={handlePlayAgain}>
-            Play again
-          </Button>
-          <Button
-            variant="secondary"
-            type="button"
-            onClick={() => navigate(pathWithGameSettings("/", gameSettings))}
-          >
-            Home
-          </Button>
+          <Text variant="label" className="text-game-text-base-secondary">
+            Play another puzzle
+          </Text>
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-center">
+            {PUZZLE_IDS.map((puzzle) => (
+              <Button
+                key={puzzle}
+                variant="primary"
+                type="button"
+                className="min-w-[8rem]"
+                onClick={() => handlePlayPuzzle(puzzle)}
+              >
+                {puzzleLabel(puzzle)}
+              </Button>
+            ))}
+          </div>
         </div>
       </div>
     </div>

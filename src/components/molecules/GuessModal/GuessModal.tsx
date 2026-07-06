@@ -755,6 +755,7 @@ export function GuessModal({
                 rejecting?.zone === "rhymes" && !flyback ? rejecting.word : null
               }
               rhymeRejecting={rejecting?.zone === "rhymes" && !flyback}
+              onAnswerEnter={handleCheckClick}
             />
           ) : null}
 
