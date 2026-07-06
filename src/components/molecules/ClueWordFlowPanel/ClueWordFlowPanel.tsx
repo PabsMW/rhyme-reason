@@ -47,6 +47,14 @@ export type ClueWordFlowPanelProps = {
   checkCueTargets?: CheckCueTarget[];
   /** When false, only the answer input is shown (no connector or rhyme drop zone). */
   showRhymeDropZone?: boolean;
+  /** Validate on Check — words stay in zones until checked; chips lock on correct Check. */
+  validateOnCheck?: boolean;
+  reasonLocked?: boolean;
+  rhymeLocked?: boolean;
+  answerLocked?: boolean;
+  /** Staggered top-to-bottom success reveal before modal close (no-rails). */
+  successRevealActive?: boolean;
+  successRevealStep?: number;
   className?: string;
 };
 
@@ -84,6 +92,12 @@ export function ClueWordFlowPanel({
   checkCueSignal = 0,
   checkCueTargets = [],
   showRhymeDropZone = true,
+  validateOnCheck = false,
+  reasonLocked = false,
+  rhymeLocked = false,
+  answerLocked = false,
+  successRevealActive = false,
+  successRevealStep = -1,
   className,
 }: ClueWordFlowPanelProps) {
   const prefersReducedMotion = useReducedMotion();
@@ -92,10 +106,23 @@ export function ClueWordFlowPanel({
     isCorrectWord(reasonWord, hint.anchorCloudWord);
   const rhymeCorrect =
     rhymeWord !== null && isCorrectWord(rhymeWord, hint.rhymeWith);
-  const reasonCueShaking = useCueShake(
-    checkCueSignal,
-    checkCueTargets.includes("reason"),
-  );
+  const reasonShowSuccess = validateOnCheck
+    ? successRevealActive
+      ? (successRevealStep >= 0 || reasonLocked) && Boolean(reasonWord)
+      : reasonLocked && Boolean(reasonWord)
+    : reasonCorrect && Boolean(reasonWord);
+  const rhymeShowSuccess = validateOnCheck
+    ? successRevealActive
+      ? (successRevealStep >= 2 || rhymeLocked) && Boolean(rhymeWord)
+      : rhymeLocked
+    : rhymeCorrect;
+  const answerShowSuccess = validateOnCheck
+    ? successRevealActive
+      ? (successRevealStep >= 1 || answerLocked) && Boolean(secondWord.trim())
+      : answerLocked
+    : answerCorrect;
+  const rhymesEnabled = validateOnCheck ? true : reasonCorrect;
+  const reasonCueShaking = useCueShake(checkCueSignal, "reason", checkCueTargets);
 
   const fadeSlide = {
     initial: prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 8 },
@@ -129,7 +156,7 @@ export function ClueWordFlowPanel({
         className="px-2"
       />
       <AnimatePresence mode="wait" initial={false}>
-        {reasonCorrect && reasonWord ? (
+        {reasonShowSuccess && reasonWord ? (
           <motion.div
             key="reason-correct"
             className="my-1 px-2"
@@ -157,12 +184,12 @@ export function ClueWordFlowPanel({
       </AnimatePresence>
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
-          key={reasonCorrect ? "rhymes-enabled" : "rhymes-disabled"}
+          key={rhymesEnabled ? "rhymes-enabled" : "rhymes-disabled"}
           className="mt-2"
           {...fadeSlide}
         >
           <RhymesInputDropZone
-            disabled={!reasonCorrect}
+            disabled={!rhymesEnabled}
             secondWord={secondWord}
             onSecondWordChange={onSecondWordChange}
             rhymeWord={rhymeWord}
@@ -173,7 +200,7 @@ export function ClueWordFlowPanel({
             dropZonePlaceholder={rhymeDropPlaceholder}
             guessFormId={guessFormId}
             answerError={answerError}
-            answerCorrect={answerCorrect}
+            answerCorrect={answerShowSuccess}
             answerRejectSignal={answerRejectSignal}
             checkCueSignal={checkCueSignal}
             checkCueTargets={checkCueTargets}
@@ -181,7 +208,7 @@ export function ClueWordFlowPanel({
             interactionLocked={interactionLocked}
             previewWord={rhymePreviewWord}
             rejecting={rhymeRejecting}
-            correct={rhymeCorrect}
+            correct={rhymeShowSuccess}
           />
         </motion.div>
       </AnimatePresence>

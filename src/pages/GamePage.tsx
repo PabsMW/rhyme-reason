@@ -8,14 +8,15 @@ import { WordCloud } from "../components/molecules/WordCloud";
 import {
   SEED_GAME,
   activeCloud,
+  getAnswerForHint,
   getLevel,
   usedCloudWords,
   type ClueSubmission,
   type RunState,
 } from "../data/game";
 import { getCelebrationDuration } from "../lib/celebrationIntensity";
-import { loadRun, recordMove, submitClue } from "../lib/gameRun";
-import { parseGameSettings, pathWithGameSettings } from "../lib/gameSettings";
+import { loadRun, recordCheck, recordMove, submitClue } from "../lib/gameRun";
+import { parseGameSettings, pathWithGameSettings, usesCheckScoring } from "../lib/gameSettings";
 
 export function GamePage() {
   const navigate = useNavigate();
@@ -80,49 +81,60 @@ export function GamePage() {
     setRun((prev) => recordMove(prev));
   }, []);
 
+  const handleRecordCheck = useCallback(() => {
+    setRun((prev) => recordCheck(prev));
+  }, []);
+
   const handleSubmit = useCallback(
     (submission: ClueSubmission) => {
       if (!selectedHintId) return;
 
-      const runWithSubmitMove = recordMove(run);
-      const result = submitClue(runWithSubmitMove, selectedHintId, submission);
-      if (!result.ok) {
-        setRun(runWithSubmitMove);
-        setError("Wrong answer");
-        setAnswerRejectSignal((n) => n + 1);
-        return;
-      }
-
-      const solvedHintId = selectedHintId;
-      setError(null);
-      setGuess("");
-      setRun(result.run);
-      closeGuessModal();
-
-      // Play the celebration on the just-solved clue card in the picker.
-      setCelebrateHintId(solvedHintId);
-      setCelebrateSignal((n) => n + 1);
-      window.requestAnimationFrame(() => {
-        document
-          .getElementById(`hint-card-${solvedHintId}`)
-          ?.scrollIntoView({ behavior: "smooth", block: "center" });
-      });
-
-      if (result.complete) {
-        // Hold on the picker so the celebration is visible before routing.
-        delayedWinNavigateRef.current = true;
-        if (winNavigateTimerRef.current !== null) {
-          window.clearTimeout(winNavigateTimerRef.current);
+      setRun((prevRun) => {
+        const runForSubmit = usesCheckScoring(gameSettings.solveFlow)
+          ? recordCheck(prevRun)
+          : recordMove(prevRun);
+        const result = submitClue(runForSubmit, selectedHintId, submission);
+        if (!result.ok) {
+          setError("Wrong answer");
+          setAnswerRejectSignal((n) => n + 1);
+          return runForSubmit;
         }
-        winNavigateTimerRef.current = window.setTimeout(() => {
-          delayedWinNavigateRef.current = false;
-          winNavigateTimerRef.current = null;
-          navigate(pathWithGameSettings("/result", gameSettings));
-        }, getCelebrationDuration());
-      }
+
+        const solvedHintId = selectedHintId;
+        setError(null);
+        setGuess("");
+        closeGuessModal();
+        setCelebrateHintId(solvedHintId);
+        setCelebrateSignal((n) => n + 1);
+        window.requestAnimationFrame(() => {
+          document
+            .getElementById(`hint-card-${solvedHintId}`)
+            ?.scrollIntoView({ behavior: "smooth", block: "center" });
+        });
+
+        if (result.complete) {
+          delayedWinNavigateRef.current = true;
+          if (winNavigateTimerRef.current !== null) {
+            window.clearTimeout(winNavigateTimerRef.current);
+          }
+          winNavigateTimerRef.current = window.setTimeout(() => {
+            delayedWinNavigateRef.current = false;
+            winNavigateTimerRef.current = null;
+            navigate(pathWithGameSettings("/result", gameSettings));
+          }, getCelebrationDuration());
+        }
+
+        return result.run;
+      });
     },
-    [closeGuessModal, gameSettings, navigate, run, selectedHintId],
+    [closeGuessModal, gameSettings, navigate, selectedHintId],
   );
+
+  const scoreLabel = usesCheckScoring(gameSettings.solveFlow) ? "CHECKS" : "MOVES";
+  const expectedAnswer = useMemo(() => {
+    if (!activeHint) return "";
+    return getAnswerForHint(levelDef, activeHint.id);
+  }, [activeHint, levelDef]);
 
   return (
     <div className="flex min-h-dvh flex-col bg-game-surface-base-level0">
@@ -139,7 +151,7 @@ export function GamePage() {
           className="font-sf-pro-rounded text-base font-semibold"
           aria-live="polite"
         >
-          MOVES: {run.totalMoves}
+          {scoreLabel}: {run.totalMoves}
         </Text>
         <Button
           variant="secondary"
@@ -201,6 +213,8 @@ export function GamePage() {
           answerRejectSignal={answerRejectSignal}
           moves={run.totalMoves}
           onRecordMove={handleRecordMove}
+          onRecordCheck={handleRecordCheck}
+          expectedAnswer={expectedAnswer}
           solveFlow={gameSettings.solveFlow}
         />
       ) : null}

@@ -93,15 +93,10 @@ export function RhymesInputDropZone({
   const errorId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const answerShaking = useAnswerRejectFeedback(answerRejectSignal, inputRef);
-  const inputCueShaking = useCueShake(
-    checkCueSignal,
-    checkCueTargets.includes("input"),
-    { focusRef: inputRef },
-  );
-  const rhymeCueShaking = useCueShake(
-    checkCueSignal,
-    checkCueTargets.includes("rhyme"),
-  );
+  const inputCueShaking = useCueShake(checkCueSignal, "input", checkCueTargets, {
+    focusRef: inputRef,
+  });
+  const rhymeCueShaking = useCueShake(checkCueSignal, "rhyme", checkCueTargets);
   const inputShaking = answerShaking || inputCueShaking;
   const wordDrag = useWordDrag();
   const [dragOver, setDragOver] = useState(false);
@@ -193,7 +188,11 @@ export function RhymesInputDropZone({
       )}
     >
       {answerCorrect && secondWord ? (
-        <CorrectDropWord word={secondWord} />
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div key="answer-correct" {...successPop}>
+            <CorrectDropWord word={secondWord} />
+          </motion.div>
+        </AnimatePresence>
       ) : (
       <div className="rhymes-drop-zone-glow w-[200px] overflow-visible">
         <div

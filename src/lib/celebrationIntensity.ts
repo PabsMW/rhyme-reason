@@ -90,3 +90,17 @@ export const CELEBRATION_COLORS = [
 export function getCelebrationDuration(intensity: CelebrationIntensity = DEFAULT_CELEBRATION_INTENSITY): number {
   return getCelebrationConfig(intensity).duration * 1000 + 80;
 }
+
+/** Pause after the last success chip scales in before closing (no-rails). */
+export const SUCCESS_REVEAL_HOLD_MS = 1000;
+
+/** Delay between each top-to-bottom success chip reveal. */
+export const SUCCESS_REVEAL_STEP_MS = 220;
+export const SUCCESS_REVEAL_STEP_REDUCED_MS = 100;
+
+/** Total time from first chip reveal to modal close. */
+export function getSuccessRevealCloseDelayMs(reducedMotion = false): number {
+  const stepMs = reducedMotion ? SUCCESS_REVEAL_STEP_REDUCED_MS : SUCCESS_REVEAL_STEP_MS;
+  if (reducedMotion) return SUCCESS_REVEAL_HOLD_MS;
+  return stepMs * 3 + SUCCESS_REVEAL_HOLD_MS;
+}

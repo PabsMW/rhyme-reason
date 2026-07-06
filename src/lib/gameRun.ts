@@ -55,6 +55,11 @@ export function recordMove(run: RunState): RunState {
   return next;
 }
 
+/** No-rails flow scores by Check button presses (stored in totalMoves). */
+export function recordCheck(run: RunState): RunState {
+  return recordMove(run);
+}
+
 export function clearRun(): void {
   sessionStorage.removeItem(STORAGE_KEY);
 }

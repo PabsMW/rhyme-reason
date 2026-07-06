@@ -1,6 +1,11 @@
 export type LevelsToWin = 1 | 2 | 3;
 
-export type SolveFlow = "sequential" | "parallel" | "parallel-2" | "parallel-3";
+export type SolveFlow =
+  | "sequential"
+  | "parallel"
+  | "parallel-2"
+  | "parallel-3"
+  | "no-rails";
 
 export type GameSettings = {
   levelsToWin: LevelsToWin;
@@ -34,7 +39,8 @@ export function parseGameSettings(search: string): GameSettings {
     flowRaw === "sequential" ||
     flowRaw === "parallel" ||
     flowRaw === "parallel-2" ||
-    flowRaw === "parallel-3"
+    flowRaw === "parallel-3" ||
+    flowRaw === "no-rails"
   ) {
     solveFlow = flowRaw;
   }
@@ -76,6 +82,7 @@ export const SOLVE_FLOW_OPTIONS: SolveFlow[] = [
   "parallel",
   "parallel-2",
   "parallel-3",
+  "no-rails",
 ];
 
 export function levelsToWinLabel(count: LevelsToWin): string {
@@ -86,6 +93,7 @@ export function solveFlowLabel(flow: SolveFlow): string {
   if (flow === "sequential") return "Sequential";
   if (flow === "parallel-2") return "Parallel 2.0";
   if (flow === "parallel-3") return "Parallel 3.0";
+  if (flow === "no-rails") return "No Rails";
   return "Parallel";
 }
 
@@ -93,11 +101,24 @@ export function solveFlowDescription(flow: SolveFlow): string {
   if (flow === "sequential") return "Reason, then Rhyme, then Guess";
   if (flow === "parallel-2") return "Experimental parallel flow";
   if (flow === "parallel-3") return "Clue word flow panel";
+  if (flow === "no-rails") return "Free-form panel; validate on Check; Hint in practice";
   return "Reason, then Rhyme and Guess together";
 }
 
 export function isParallelSolveFlow(flow: SolveFlow): boolean {
   return flow === "parallel" || flow === "parallel-2" || flow === "parallel-3";
+}
+
+export function isClueWordFlowPanel(flow: SolveFlow): boolean {
+  return flow === "parallel-3" || flow === "no-rails";
+}
+
+export function isNoRailsSolveFlow(flow: SolveFlow): boolean {
+  return flow === "no-rails";
+}
+
+export function usesCheckScoring(flow: SolveFlow): boolean {
+  return flow === "no-rails";
 }
 
 export function gameSettingsSummary(settings: GameSettings): string {

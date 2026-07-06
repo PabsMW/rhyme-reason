@@ -5,19 +5,41 @@ import { Button } from "../components/atoms/Button";
 import { Text } from "../components/atoms/Text";
 import { ClueWordFlowPanel } from "../components/molecules/ClueWordFlowPanel";
 import { HowToPlayMessage } from "../components/molecules/HowToPlayMessage";
+import {
+  RejectedTileFlyback,
+  type TileFlybackRect,
+} from "../components/molecules/RejectedTileFlyback";
 import { WordCloud } from "../components/molecules/WordCloud";
 import { WordDragProvider, type WordDragZoneId } from "../components/molecules/GuessModal/WordDragContext";
 import type { HintDefinition } from "../data/game";
+import {
+  SUCCESS_REVEAL_HOLD_MS,
+  SUCCESS_REVEAL_STEP_MS,
+  SUCCESS_REVEAL_STEP_REDUCED_MS,
+} from "../lib/celebrationIntensity";
 import { clearRun } from "../lib/gameRun";
 import { cn } from "../lib/cn";
+import { findCloudTileElement } from "../lib/findCloudTileElement";
+import { isNoRailsSolveFlow, parseGameSettings, pathWithGameSettings } from "../lib/gameSettings";
+import { getNoRailsHintAction, norm } from "../lib/noRailsSolve";
 import { markOnboardingComplete } from "../lib/onboarding";
-import { parseGameSettings, pathWithGameSettings } from "../lib/gameSettings";
+import { getRejectFallbackMs, getZoneRejectShakeMs } from "../lib/rejectAnimation";
+import { sortCheckCueTargets, type CheckCueTarget } from "../lib/useCueShake";
 
 type TutorialStep = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+type DropZoneId = "reason" | "rhymes";
+type RejectingState = { zone: DropZoneId; word: string };
 
 const TUTORIAL_STEP_COUNT = 6;
 
 const SLIDE_EASE = [0.22, 1, 0.36, 1] as const;
+
+const toFlybackRect = (rect: DOMRect): TileFlybackRect => ({
+  left: rect.left,
+  top: rect.top,
+  width: rect.width,
+  height: rect.height,
+});
 
 function slideBodyMotion(
   prefersReducedMotion: boolean | null,
@@ -47,10 +69,10 @@ function slideBodyMotion(
   };
 }
 
-function footerButtonKey(step: TutorialStep): string {
+function footerButtonKey(step: TutorialStep, useNoRailsPractice: boolean): string {
   if (step === 8) return "play";
   if (step === 6) return "next-nice-work";
-  if (step === 5 || step === 7) return "check";
+  if (step === 5 || step === 7) return useNoRailsPractice ? "check-no-rails" : "check";
   if (step === 1) return "next-intro";
   return "next";
 }
@@ -168,7 +190,9 @@ export function HowToPlayPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const gameSettings = parseGameSettings(searchParams.toString());
+  const isNoRailsTutorial = isNoRailsSolveFlow(gameSettings.solveFlow);
   const panelRef = useRef<HTMLDivElement>(null);
+  const rejectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const guessFormId = useId();
   const [step, setStep] = useState<TutorialStep>(1);
   const [reasonWord, setReasonWord] = useState<string | null>(null);
@@ -178,10 +202,30 @@ export function HowToPlayPage() {
   const [practiceAnswerError, setPracticeAnswerError] = useState<string | null>(null);
   const [practiceWrongAttempts, setPracticeWrongAttempts] = useState(0);
   const [answerRejectSignal, setAnswerRejectSignal] = useState(0);
+  const [reasonLocked, setReasonLocked] = useState(false);
+  const [rhymeLocked, setRhymeLocked] = useState(false);
+  const [answerLocked, setAnswerLocked] = useState(false);
+  const [localAnswerRejectSignal, setLocalAnswerRejectSignal] = useState(0);
+  const [checkCue, setCheckCue] = useState<{ signal: number; targets: CheckCueTarget[] }>({
+    signal: 0,
+    targets: [],
+  });
+  const [successRevealStep, setSuccessRevealStep] = useState(-1);
+  const [successPending, setSuccessPending] = useState(false);
+  const [rejecting, setRejecting] = useState<RejectingState | null>(null);
+  const [flyback, setFlyback] = useState<{
+    word: string;
+    from: TileFlybackRect;
+    to: TileFlybackRect;
+  } | null>(null);
   const prefersReducedMotion = useReducedMotion();
 
   const isPractice = step === 7;
+  const useNoRailsPractice = isNoRailsTutorial && isPractice;
   const activeHint = isPractice ? PRACTICE_HINT : TUTORIAL_HINT;
+  const expectedAnswer = isPractice ? PRACTICE_ANSWER : TUTORIAL_ANSWER;
+  const interactionLocked = rejecting !== null;
+  const blockInteraction = interactionLocked || successPending;
 
   const showNextFooter = step === 1;
   const showCloud = step === 2 || step === 4 || isPractice;
@@ -193,9 +237,15 @@ export function HowToPlayPage() {
   const rhymeCorrect = rhymeWord
     ? isExpectedRhymeWord(rhymeWord, activeHint)
     : false;
-  const canCheck = isPractice
-    ? reasonCorrect && rhymeCorrect && Boolean(guess.trim())
-    : Boolean(guess.trim());
+  const hasAnyContent = Boolean(reasonWord || rhymeWord || guess.trim());
+  const canCheck = useNoRailsPractice
+    ? hasAnyContent && !blockInteraction
+    : isPractice
+      ? reasonCorrect && rhymeCorrect && Boolean(guess.trim())
+      : Boolean(guess.trim());
+  const noRailsHintAction = useNoRailsPractice
+    ? getNoRailsHintAction(reasonWord, rhymeWord, guess, expectedAnswer)
+    : null;
   const showCheckFooter = step === 5 || isPractice;
   const showStartGameFooter = step === 6;
   const showPlayFooter = step === 8;
@@ -205,14 +255,19 @@ export function HowToPlayPage() {
   const placedWords = [reasonWord, rhymeWord].filter(
     (word): word is string => word !== null,
   );
-  const ghostPlacedWords = [
-    reasonCorrect && reasonWord ? reasonWord : null,
-    rhymeCorrect && rhymeWord ? rhymeWord : null,
-  ].filter((word): word is string => word !== null);
+  const ghostPlacedWords = useNoRailsPractice
+    ? [
+        reasonLocked && reasonWord ? reasonWord : null,
+        rhymeLocked && rhymeWord ? rhymeWord : null,
+      ].filter((word): word is string => word !== null)
+    : [
+        reasonCorrect && reasonWord ? reasonWord : null,
+        rhymeCorrect && rhymeWord ? rhymeWord : null,
+      ].filter((word): word is string => word !== null);
 
   const message = useMemo(() => messageForStep(step), [step]);
   const displayMessage = useMemo(() => {
-    if (isPractice && practiceWrongAttempts >= 2) {
+    if (isPractice && !isNoRailsTutorial && practiceWrongAttempts >= 2) {
       return {
         prefix: "Not quite - the answer is ",
         highlight: "MEDAL",
@@ -220,7 +275,122 @@ export function HowToPlayPage() {
       };
     }
     return message;
-  }, [isPractice, message, practiceWrongAttempts]);
+  }, [isNoRailsTutorial, isPractice, message, practiceWrongAttempts]);
+
+  const resetNoRailsState = useCallback(() => {
+    setReasonLocked(false);
+    setRhymeLocked(false);
+    setAnswerLocked(false);
+    setLocalAnswerRejectSignal(0);
+    setCheckCue({ signal: 0, targets: [] });
+    setSuccessRevealStep(-1);
+    setSuccessPending(false);
+    setRejecting(null);
+    setFlyback(null);
+    if (rejectTimerRef.current !== null) {
+      window.clearTimeout(rejectTimerRef.current);
+      rejectTimerRef.current = null;
+    }
+  }, []);
+
+  const clearRejectTimer = useCallback(() => {
+    if (rejectTimerRef.current !== null) {
+      window.clearTimeout(rejectTimerRef.current);
+      rejectTimerRef.current = null;
+    }
+  }, []);
+
+  const finishRejection = useCallback(
+    (zone?: DropZoneId) => {
+      clearRejectTimer();
+      if (useNoRailsPractice && zone) {
+        if (zone === "reason") setReasonWord(null);
+        else setRhymeWord(null);
+      }
+      setRejecting(null);
+      setFlyback(null);
+    },
+    [clearRejectTimer, useNoRailsPractice],
+  );
+
+  const startRejection = useCallback(
+    (zone: DropZoneId, word: string) => {
+      clearRejectTimer();
+      setFlyback(null);
+      setRejecting({ zone, word });
+      rejectTimerRef.current = window.setTimeout(
+        () => finishRejection(zone),
+        getRejectFallbackMs(),
+      );
+    },
+    [clearRejectTimer, finishRejection],
+  );
+
+  useEffect(() => {
+    if (!rejecting || flyback || !panelRef.current) return;
+
+    const panel = panelRef.current;
+    const { zone, word } = rejecting;
+
+    const shakeTimer = window.setTimeout(() => {
+      const preview = panel.querySelector<HTMLElement>(
+        `[data-reject-preview="${zone}"]`,
+      );
+      const cloudTile = findCloudTileElement(panel, word);
+      if (!preview || !cloudTile) {
+        finishRejection(zone);
+        return;
+      }
+
+      setFlyback({
+        word,
+        from: toFlybackRect(preview.getBoundingClientRect()),
+        to: toFlybackRect(cloudTile.getBoundingClientRect()),
+      });
+    }, getZoneRejectShakeMs());
+
+    return () => window.clearTimeout(shakeTimer);
+  }, [rejecting, flyback, finishRejection]);
+
+  useEffect(() => {
+    return () => clearRejectTimer();
+  }, [clearRejectTimer]);
+
+  useEffect(() => {
+    if (!successPending || !useNoRailsPractice) return;
+
+    const stepMs = prefersReducedMotion
+      ? SUCCESS_REVEAL_STEP_REDUCED_MS
+      : SUCCESS_REVEAL_STEP_MS;
+    const nextStep: TutorialStep = 8;
+
+    if (prefersReducedMotion) {
+      const closeTimer = window.setTimeout(() => {
+        setSuccessPending(false);
+        setSuccessRevealStep(-1);
+        setStep(nextStep);
+      }, SUCCESS_REVEAL_HOLD_MS);
+      return () => {
+        window.clearTimeout(closeTimer);
+        setSuccessRevealStep(-1);
+      };
+    }
+
+    const step1Timer = window.setTimeout(() => setSuccessRevealStep(1), stepMs);
+    const step2Timer = window.setTimeout(() => setSuccessRevealStep(2), stepMs * 2);
+    const closeTimer = window.setTimeout(() => {
+      setSuccessPending(false);
+      setSuccessRevealStep(-1);
+      setStep(nextStep);
+    }, stepMs * 3 + SUCCESS_REVEAL_HOLD_MS);
+
+    return () => {
+      window.clearTimeout(step1Timer);
+      window.clearTimeout(step2Timer);
+      window.clearTimeout(closeTimer);
+      setSuccessRevealStep(-1);
+    };
+  }, [prefersReducedMotion, successPending, useNoRailsPractice]);
 
   const animatedMessage = (
     <AnimatePresence mode="wait" initial={false}>
@@ -278,11 +448,32 @@ export function HowToPlayPage() {
     setPracticeAnswerError(null);
     setPracticeWrongAttempts(0);
     setAnswerRejectSignal(0);
+    resetNoRailsState();
     setStep(7);
-  }, []);
+  }, [resetNoRailsState]);
+
+  const tryPlaceWordNoRails = useCallback(
+    (zone: DropZoneId, word: string): boolean => {
+      if (!useNoRailsPractice || rejecting) return false;
+      if (zone === "reason" && reasonLocked) return false;
+      if (zone === "rhymes" && rhymeLocked) return false;
+
+      const lower = word.toLowerCase();
+      if (reasonWord?.toLowerCase() === lower && zone !== "reason") setReasonWord(null);
+      if (rhymeWord?.toLowerCase() === lower && zone !== "rhymes") setRhymeWord(null);
+      if (zone === "reason") setReasonWord(word);
+      else setRhymeWord(word);
+      setHintError(null);
+      setPracticeAnswerError(null);
+      return true;
+    },
+    [reasonLocked, rhymeLocked, reasonWord, rhymeWord, rejecting, useNoRailsPractice],
+  );
 
   const placeReason = useCallback(
     (word: string): boolean => {
+      if (useNoRailsPractice) return tryPlaceWordNoRails("reason", word);
+
       if (step === 2) {
         if (!isExpectedReasonWord(word, TUTORIAL_HINT)) {
           setHintError("Try GREAT in Reason.");
@@ -304,11 +495,13 @@ export function HowToPlayPage() {
       }
       return false;
     },
-    [step],
+    [step, tryPlaceWordNoRails, useNoRailsPractice],
   );
 
   const placeRhyme = useCallback(
     (word: string): boolean => {
+      if (useNoRailsPractice) return tryPlaceWordNoRails("rhymes", word);
+
       if (step === 4) {
         if (!isExpectedRhymeWord(word, TUTORIAL_HINT)) {
           setHintError("Try LANE in Rhymes with.");
@@ -330,7 +523,7 @@ export function HowToPlayPage() {
       }
       return false;
     },
-    [step],
+    [step, tryPlaceWordNoRails, useNoRailsPractice],
   );
 
   const handleDropOnZone = useCallback(
@@ -341,7 +534,146 @@ export function HowToPlayPage() {
     [placeReason, placeRhyme],
   );
 
+  const handleNoRailsCheck = useCallback(() => {
+    if (blockInteraction || !hasAnyContent || !useNoRailsPractice) return;
+
+    const trimmed = guess.trim();
+    const cueTargets: CheckCueTarget[] = [];
+    let nextReasonLocked = reasonLocked;
+    let nextRhymeLocked = rhymeLocked;
+    let nextAnswerLocked = answerLocked;
+    let startedWordRejection = false;
+    const willAllBeCorrect = Boolean(
+      reasonWord &&
+        rhymeWord &&
+        trimmed &&
+        (reasonLocked || norm(reasonWord) === norm(activeHint.anchorCloudWord)) &&
+        (rhymeLocked || norm(rhymeWord) === norm(activeHint.rhymeWith)) &&
+        (answerLocked || norm(trimmed) === norm(expectedAnswer)),
+    );
+
+    if (!reasonLocked) {
+      if (!reasonWord) {
+        cueTargets.push("reason");
+      } else if (norm(reasonWord) !== norm(activeHint.anchorCloudWord)) {
+        if (!startedWordRejection) {
+          startRejection("reason", reasonWord);
+          startedWordRejection = true;
+        }
+      } else {
+        nextReasonLocked = true;
+        if (!willAllBeCorrect) setReasonLocked(true);
+      }
+    }
+
+    if (!rhymeLocked) {
+      if (!rhymeWord) {
+        cueTargets.push("rhyme");
+      } else if (norm(rhymeWord) !== norm(activeHint.rhymeWith)) {
+        if (!startedWordRejection) {
+          startRejection("rhymes", rhymeWord);
+          startedWordRejection = true;
+        }
+      } else {
+        nextRhymeLocked = true;
+        if (!willAllBeCorrect) setRhymeLocked(true);
+      }
+    }
+
+    if (!answerLocked) {
+      if (!trimmed) {
+        cueTargets.push("input");
+      } else if (norm(trimmed) !== norm(expectedAnswer)) {
+        setPracticeAnswerError("Wrong answer");
+        setLocalAnswerRejectSignal((n) => n + 1);
+      } else {
+        nextAnswerLocked = true;
+        if (!willAllBeCorrect) setAnswerLocked(true);
+      }
+    }
+
+    if (cueTargets.length > 0) {
+      setCheckCue((prev) => ({
+        signal: prev.signal + 1,
+        targets: sortCheckCueTargets(cueTargets),
+      }));
+    }
+
+    const allCorrect =
+      nextReasonLocked &&
+      nextRhymeLocked &&
+      nextAnswerLocked &&
+      reasonWord &&
+      rhymeWord &&
+      trimmed;
+
+    if (allCorrect) {
+      setHintError(null);
+      setPracticeAnswerError(null);
+      setSuccessRevealStep(prefersReducedMotion ? 2 : 0);
+      setSuccessPending(true);
+    }
+  }, [
+    activeHint.anchorCloudWord,
+    activeHint.rhymeWith,
+    answerLocked,
+    blockInteraction,
+    expectedAnswer,
+    guess,
+    hasAnyContent,
+    prefersReducedMotion,
+    reasonLocked,
+    reasonWord,
+    rhymeLocked,
+    rhymeWord,
+    startRejection,
+    useNoRailsPractice,
+  ]);
+
+  const handleNoRailsHint = useCallback(() => {
+    if (blockInteraction || !useNoRailsPractice) return;
+
+    const action = getNoRailsHintAction(reasonWord, rhymeWord, guess, expectedAnswer);
+    if (!action) return;
+
+    setHintError(null);
+    setPracticeAnswerError(null);
+
+    if (action === "reason") {
+      tryPlaceWordNoRails("reason", activeHint.anchorCloudWord);
+      return;
+    }
+
+    if (action === "rhyme") {
+      tryPlaceWordNoRails("rhymes", activeHint.rhymeWith);
+      return;
+    }
+
+    const trimmedExpected = expectedAnswer.trim();
+    if (action === "firstLetter") {
+      setGuess(trimmedExpected[0] ?? "");
+      return;
+    }
+
+    setGuess(trimmedExpected);
+  }, [
+    activeHint.anchorCloudWord,
+    activeHint.rhymeWith,
+    blockInteraction,
+    expectedAnswer,
+    guess,
+    reasonWord,
+    rhymeWord,
+    tryPlaceWordNoRails,
+    useNoRailsPractice,
+  ]);
+
   const handleSubmit = useCallback(() => {
+    if (useNoRailsPractice) {
+      handleNoRailsCheck();
+      return;
+    }
+
     if (step === 5) {
       if (!isExpectedAnswer(guess, TUTORIAL_ANSWER)) {
         setHintError("Close - try DANE.");
@@ -369,14 +701,27 @@ export function HowToPlayPage() {
       setPracticeAnswerError(null);
       setStep(8);
     }
-  }, [guess, practiceWrongAttempts, reasonCorrect, rhymeCorrect, step]);
+  }, [
+    guess,
+    handleNoRailsCheck,
+    practiceWrongAttempts,
+    reasonCorrect,
+    rhymeCorrect,
+    step,
+    useNoRailsPractice,
+  ]);
+
+  const handleCheckClick = useCallback(() => {
+    if (blockInteraction) return;
+    handleSubmit();
+  }, [blockInteraction, handleSubmit]);
 
   const handleGuessFormSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
-      handleSubmit();
+      handleCheckClick();
     },
-    [handleSubmit],
+    [handleCheckClick],
   );
 
   useEffect(() => {
@@ -405,6 +750,19 @@ export function HowToPlayPage() {
     }, 250);
     return () => window.clearTimeout(advanceTimer);
   }, [guess, step]);
+
+  const panelAnswerError = useNoRailsPractice
+    ? practiceAnswerError
+    : step === 5
+      ? hintError
+      : isPractice
+        ? practiceAnswerError
+        : null;
+  const panelAnswerRejectSignal = useNoRailsPractice
+    ? localAnswerRejectSignal
+    : isPractice
+      ? answerRejectSignal
+      : 0;
 
   return (
     <div className="flex min-h-dvh flex-col bg-game-surface-base-level0">
@@ -475,7 +833,7 @@ export function HowToPlayPage() {
                   >
                     <div className="relative z-10 shrink-0 border-b border-game-border-surface-level1 bg-game-surface-base-level1 px-2.5 pb-2.5 pt-2.5">
                       {animatedMessage}
-                      {hintError && step >= 2 && step <= 7 ? (
+                      {hintError && step >= 2 && step <= 7 && !useNoRailsPractice ? (
                         <p className="mt-2 rounded bg-game-feedback-error py-1 text-center font-sf-compact-display text-base font-semibold leading-none text-white">
                           {hintError}
                         </p>
@@ -483,7 +841,7 @@ export function HowToPlayPage() {
                     </div>
 
                     <WordDragProvider
-                      disabled={step === 6}
+                      disabled={step === 6 || blockInteraction}
                       key={isPractice ? "practice" : "tutorial"}
                       onDragStart={() => undefined}
                       onDropOnZone={handleDropOnZone}
@@ -494,10 +852,14 @@ export function HowToPlayPage() {
                       <div
                         className={cn(
                           "flex min-h-0 flex-1 flex-col items-center justify-center gap-0 overflow-y-auto",
-                          reasonCorrect && (step >= 4 || isPractice) ? "pb-28" : "pb-8",
+                          useNoRailsPractice
+                            ? "pb-[110px]"
+                            : reasonCorrect && (step >= 4 || isPractice)
+                              ? "pb-28"
+                              : "pb-8",
                         )}
                       >
-                        {showCloud ? (
+                        {showCloud && !(useNoRailsPractice && successPending) ? (
                           <section className="select-none rounded-t-none rounded-b-2xl bg-game-surface-base-level1 px-1 py-4">
                             <WordCloud
                               words={
@@ -511,9 +873,9 @@ export function HowToPlayPage() {
                               }
                               cueWord={
                                 isPractice
-                                  ? !reasonCorrect
+                                  ? !useNoRailsPractice && !reasonCorrect
                                     ? PRACTICE_HINT.anchorCloudWord
-                                    : !rhymeCorrect
+                                    : !useNoRailsPractice && !rhymeCorrect
                                       ? PRACTICE_HINT.rhymeWith
                                       : undefined
                                   : step === 2
@@ -526,14 +888,27 @@ export function HowToPlayPage() {
                               placedWords={placedWords}
                               ghostPlacedWords={
                                 isPractice
-                                  ? []
+                                  ? useNoRailsPractice
+                                    ? ghostPlacedWords
+                                    : []
                                   : step === 2
                                     ? [TUTORIAL_HINT.rhymeWith, ...ghostPlacedWords]
                                     : ghostPlacedWords
                               }
                               draggable={(step >= 2 && step <= 4) || isPractice}
+                              interactionLocked={blockInteraction}
+                              flybackHiddenWord={flyback?.word ?? null}
                             />
                           </section>
+                        ) : null}
+
+                        {flyback ? (
+                          <RejectedTileFlyback
+                            word={flyback.word}
+                            from={flyback.from}
+                            to={flyback.to}
+                            onComplete={() => finishRejection(rejecting?.zone)}
+                          />
                         ) : null}
 
                         <form
@@ -548,10 +923,25 @@ export function HowToPlayPage() {
                             displayNumber={1}
                             className={step === 2 ? "mx-2 mt-2 mb-4" : "mx-2 mt-1 mb-4"}
                             guessFormId={guessFormId}
-                            answerError={
-                              step === 5 ? hintError : isPractice ? practiceAnswerError : null
+                            answerError={panelAnswerError}
+                            answerRejectSignal={panelAnswerRejectSignal}
+                            checkCueSignal={checkCue.signal}
+                            checkCueTargets={checkCue.targets}
+                            validateOnCheck={useNoRailsPractice}
+                            successRevealActive={useNoRailsPractice && successPending}
+                            successRevealStep={successRevealStep}
+                            reasonLocked={reasonLocked}
+                            rhymeLocked={rhymeLocked}
+                            answerLocked={answerLocked}
+                            interactionLocked={blockInteraction}
+                            reasonPreviewWord={
+                              rejecting?.zone === "reason" && !flyback ? rejecting.word : null
                             }
-                            answerRejectSignal={isPractice ? answerRejectSignal : 0}
+                            reasonRejecting={rejecting?.zone === "reason" && !flyback}
+                            rhymePreviewWord={
+                              rejecting?.zone === "rhymes" && !flyback ? rejecting.word : null
+                            }
+                            rhymeRejecting={rejecting?.zone === "rhymes" && !flyback}
                             answerCorrect={step === 6}
                             reasonWord={reasonWord}
                             onPlaceReasonWord={placeReason}
@@ -578,7 +968,7 @@ export function HowToPlayPage() {
               <footer className="shrink-0 border-t border-game-border-surface-level1 bg-game-surface-base-level0 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
                 <AnimatePresence mode="wait" initial={false}>
                   <motion.div
-                    key={footerButtonKey(step)}
+                    key={footerButtonKey(step, useNoRailsPractice)}
                     className="w-full"
                     initial={
                       prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 10 }
@@ -610,15 +1000,47 @@ export function HowToPlayPage() {
                         Next
                       </Button>
                     ) : showCheckFooter ? (
-                      <Button
-                        type="submit"
-                        form={guessFormId}
-                        variant="primary"
-                        className="w-full justify-center"
-                        disabled={!canCheck}
-                      >
-                        Check
-                      </Button>
+                      useNoRailsPractice ? (
+                        <div className="flex items-center gap-2.5">
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            disabled={blockInteraction || noRailsHintAction === null}
+                            className={cn(
+                              "shrink-0 !h-fit !px-5 py-2 border-game-surface-action-primary-default text-game-surface-action-primary-default",
+                              "enabled:hover:border-game-surface-action-primary-hover enabled:hover:bg-transparent enabled:hover:text-game-surface-action-primary-hover",
+                            )}
+                            onClick={handleNoRailsHint}
+                          >
+                            {noRailsHintAction === "revealAnswer" ? "Give Up" : "Hint"}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="primary"
+                            disabled={!canCheck || successPending}
+                            aria-disabled={!canCheck || successPending}
+                            className={cn(
+                              "min-w-0 flex-1 justify-center mr-20",
+                              !canCheck &&
+                                "cursor-not-allowed bg-slate-300 text-slate-400 shadow-none",
+                            )}
+                            onClick={handleCheckClick}
+                          >
+                            Check
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          type="submit"
+                          form={guessFormId}
+                          variant="primary"
+                          className="w-full justify-center"
+                          disabled={!canCheck}
+                        >
+                          Check
+                        </Button>
+                      )
                     ) : (
                       <Button
                         type="button"
