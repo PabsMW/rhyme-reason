@@ -15,6 +15,7 @@ import { getRejectFallbackMs, getZoneRejectShakeMs } from "../../../lib/rejectAn
 import { getNoRailsHintAction, norm } from "../../../lib/noRailsSolve";
 import { sortCheckCueTargets, type CheckCueTarget } from "../../../lib/useCueShake";
 import { cn } from "../../../lib/cn";
+import { dismissKeyboard } from "../../../lib/dismissKeyboard";
 import { ClueSection } from "../ClueSection";
 import { ClueWordFlowPanel } from "../ClueWordFlowPanel";
 import { GuessSection } from "../GuessSection";
@@ -559,6 +560,7 @@ export function GuessModal({
 
   const handleCheckClick = useCallback(() => {
     if (blockInteraction) return;
+    dismissKeyboard();
     if (isNoRails) {
       if (!hasAnyContent) return;
       handleNoRailsCheck();
@@ -738,6 +740,7 @@ export function GuessModal({
                 displayNumber={hintDisplayNumber}
                 className="mt-1 mb-4"
                 guessFormId={guessFormId}
+                onAnswerEnterKey={handleCheckClick}
                 answerError={displayError}
                 answerRejectSignal={effectiveAnswerRejectSignal}
                 checkCueSignal={checkCue.signal}

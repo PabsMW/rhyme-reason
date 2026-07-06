@@ -1,7 +1,8 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { useId, useRef, useState, useEffect, type DragEvent } from "react";
+import { useId, useRef, useState, useEffect, type DragEvent, type KeyboardEvent } from "react";
 import { WordCloudTile } from "../../atoms/WordCloudTile";
 import { cn } from "../../../lib/cn";
+import { dismissKeyboard } from "../../../lib/dismissKeyboard";
 import { useAnswerRejectFeedback } from "../../../lib/useAnswerRejectFeedback";
 import { useCueShake, type CheckCueTarget } from "../../../lib/useCueShake";
 import { CorrectDropWord } from "../CorrectDropWord";
@@ -33,6 +34,8 @@ export type RhymesInputDropZoneProps = {
   answerCorrect?: boolean;
   /** Associates the answer input with the modal Guess form. */
   guessFormId?: string;
+  /** Called when Enter is pressed — typically submits the linked Check form. */
+  onEnterKey?: () => void;
   /** Shown when the typed answer is incorrect. */
   answerError?: string | null;
   /** Increments on each wrong answer submit to replay shake + focus. */
@@ -81,6 +84,7 @@ export function RhymesInputDropZone({
   correct = false,
   answerCorrect = false,
   guessFormId,
+  onEnterKey,
   answerError = null,
   answerRejectSignal = 0,
   checkCueSignal = 0,
@@ -163,6 +167,13 @@ export function RhymesInputDropZone({
     onDropSuccess?.();
   };
 
+  const handleInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    dismissKeyboard();
+    onEnterKey?.();
+  };
+
   if (disabled) {
     return (
       <div
@@ -212,6 +223,7 @@ export function RhymesInputDropZone({
             id={inputId}
             type="text"
             form={guessFormId}
+            enterKeyHint="go"
             autoComplete="off"
             autoCapitalize="characters"
             spellCheck={false}
@@ -220,6 +232,7 @@ export function RhymesInputDropZone({
             aria-invalid={Boolean(answerError)}
             aria-describedby={answerError ? errorId : undefined}
             onChange={(event) => onSecondWordChange?.(event.target.value)}
+            onKeyDown={handleInputKeyDown}
             className={cn(
               "h-full w-full rounded-[inherit] bg-transparent px-3 text-center font-inter text-lg font-bold tracking-wide text-slate-700 uppercase outline-none",
               "placeholder:text-slate-500 placeholder:normal-case",

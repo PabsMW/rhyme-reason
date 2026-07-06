@@ -19,6 +19,7 @@ import {
 } from "../lib/celebrationIntensity";
 import { clearRun } from "../lib/gameRun";
 import { cn } from "../lib/cn";
+import { dismissKeyboard } from "../lib/dismissKeyboard";
 import { findCloudTileElement } from "../lib/findCloudTileElement";
 import { isNoRailsSolveFlow, parseGameSettings, pathWithGameSettings } from "../lib/gameSettings";
 import { getNoRailsHintAction, norm } from "../lib/noRailsSolve";
@@ -713,6 +714,7 @@ export function HowToPlayPage() {
 
   const handleCheckClick = useCallback(() => {
     if (blockInteraction) return;
+    dismissKeyboard();
     handleSubmit();
   }, [blockInteraction, handleSubmit]);
 
@@ -923,6 +925,7 @@ export function HowToPlayPage() {
                             displayNumber={1}
                             className={step === 2 ? "mx-2 mt-2 mb-4" : "mx-2 mt-1 mb-4"}
                             guessFormId={guessFormId}
+                            onAnswerEnterKey={handleCheckClick}
                             answerError={panelAnswerError}
                             answerRejectSignal={panelAnswerRejectSignal}
                             checkCueSignal={checkCue.signal}
