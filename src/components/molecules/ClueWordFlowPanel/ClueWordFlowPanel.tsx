@@ -34,10 +34,6 @@ export type ClueWordFlowPanelProps = {
   rhymeRejecting?: boolean;
   onReasonDropSuccess?: () => void;
   onRhymeDropSuccess?: () => void;
-  /** Links the answer input to the modal footer Guess button. */
-  guessFormId?: string;
-  /** Called when Enter is pressed in the answer field. */
-  onAnswerEnterKey?: () => void;
   /** Shown when the typed answer is incorrect. */
   answerError?: string | null;
   /** Render the typed answer as a correct green chip instead of the input. */
@@ -87,8 +83,6 @@ export function ClueWordFlowPanel({
   rhymeRejecting = false,
   onReasonDropSuccess,
   onRhymeDropSuccess,
-  guessFormId,
-  onAnswerEnterKey,
   answerError = null,
   answerCorrect = false,
   answerRejectSignal = 0,
@@ -201,8 +195,6 @@ export function ClueWordFlowPanel({
             onDropSuccess={onRhymeDropSuccess}
             secondWordPlaceholder={secondWordPlaceholder}
             dropZonePlaceholder={rhymeDropPlaceholder}
-            guessFormId={guessFormId}
-            onEnterKey={onAnswerEnterKey}
             answerError={answerError}
             answerCorrect={answerShowSuccess}
             answerRejectSignal={answerRejectSignal}

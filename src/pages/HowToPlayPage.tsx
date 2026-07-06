@@ -924,8 +924,6 @@ export function HowToPlayPage() {
                             hint={activeHint}
                             displayNumber={1}
                             className={step === 2 ? "mx-2 mt-2 mb-4" : "mx-2 mt-1 mb-4"}
-                            guessFormId={guessFormId}
-                            onAnswerEnterKey={handleCheckClick}
                             answerError={panelAnswerError}
                             answerRejectSignal={panelAnswerRejectSignal}
                             checkCueSignal={checkCue.signal}

@@ -32,10 +32,6 @@ export type RhymesInputDropZoneProps = {
   correct?: boolean;
   /** Render the typed answer as a correct green chip instead of the input. */
   answerCorrect?: boolean;
-  /** Associates the answer input with the modal Guess form. */
-  guessFormId?: string;
-  /** Called when Enter is pressed — typically submits the linked Check form. */
-  onEnterKey?: () => void;
   /** Shown when the typed answer is incorrect. */
   answerError?: string | null;
   /** Increments on each wrong answer submit to replay shake + focus. */
@@ -83,8 +79,6 @@ export function RhymesInputDropZone({
   rejecting = false,
   correct = false,
   answerCorrect = false,
-  guessFormId,
-  onEnterKey,
   answerError = null,
   answerRejectSignal = 0,
   checkCueSignal = 0,
@@ -171,7 +165,6 @@ export function RhymesInputDropZone({
     if (event.key !== "Enter") return;
     event.preventDefault();
     dismissKeyboard();
-    onEnterKey?.();
   };
 
   if (disabled) {
@@ -222,8 +215,7 @@ export function RhymesInputDropZone({
             ref={inputRef}
             id={inputId}
             type="text"
-            form={guessFormId}
-            enterKeyHint="go"
+            enterKeyHint="done"
             autoComplete="off"
             autoCapitalize="characters"
             spellCheck={false}

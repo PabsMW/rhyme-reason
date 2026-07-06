@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useReducedMotion } from "framer-motion";
 import { IoIosCloseCircle } from "react-icons/io";
 import { Button } from "../../atoms/Button";
@@ -579,14 +579,6 @@ export function GuessModal({
     blockInteraction,
   ]);
 
-  const handleGuessFormSubmit = useCallback(
-    (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-      handleCheckClick();
-    },
-    [handleCheckClick],
-  );
-
   useEffect(() => {
     if (!open) return;
 
@@ -728,19 +720,10 @@ export function GuessModal({
           ) : null}
 
           {usesFlowPanel ? (
-            <>
-              <form
-                id={guessFormId}
-                onSubmit={handleGuessFormSubmit}
-                className="sr-only"
-                aria-hidden
-              />
               <ClueWordFlowPanel
                 hint={hint}
                 displayNumber={hintDisplayNumber}
                 className="mt-1 mb-4"
-                guessFormId={guessFormId}
-                onAnswerEnterKey={handleCheckClick}
                 answerError={displayError}
                 answerRejectSignal={effectiveAnswerRejectSignal}
                 checkCueSignal={checkCue.signal}
@@ -773,7 +756,6 @@ export function GuessModal({
               }
               rhymeRejecting={rejecting?.zone === "rhymes" && !flyback}
             />
-            </>
           ) : null}
 
           {usesFlowPanel ? null : (
