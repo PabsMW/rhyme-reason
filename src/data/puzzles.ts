@@ -13,7 +13,7 @@ export const EASY_PUZZLE: GameDefinition = {
       level: 1,
       authoredCloudWords: [
         "BLUE",
-        "BREAD",
+        "THREAD",
         "WHEEL",
         "NARROW",
         "OLIVE",
@@ -24,9 +24,9 @@ export const EASY_PUZZLE: GameDefinition = {
       hints: [
         {
           id: "easy-l1-h1",
-          clueText: "They share a wheel",
+          clueText: "Two primary colors",
           anchorCloudWord: "BLUE",
-          rhymeWith: "BREAD",
+          rhymeWith: "THREAD",
         },
         {
           id: "easy-l1-h2",
