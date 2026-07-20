@@ -28,6 +28,7 @@ export function ResultPage() {
   const levelsLabel = levelsToWinLabel(run.levelsToWin);
   const completedPuzzle =
     puzzleIdFromGameId(run.gameId) ?? gameSettings.puzzle;
+  const otherPuzzles = PUZZLE_IDS.filter((puzzle) => puzzle !== completedPuzzle);
 
   const handlePlayPuzzle = (puzzle: PuzzleId) => {
     clearRun();
@@ -64,24 +65,26 @@ export function ResultPage() {
             </li>
           ))}
         </ul>
-        <div className="mt-10 flex flex-col items-center gap-3">
-          <Text variant="label" className="text-game-text-base-secondary">
-            Play another puzzle
-          </Text>
-          <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-center">
-            {PUZZLE_IDS.map((puzzle) => (
-              <Button
-                key={puzzle}
-                variant="primary"
-                type="button"
-                className="min-w-[8rem]"
-                onClick={() => handlePlayPuzzle(puzzle)}
-              >
-                {puzzleLabel(puzzle)}
-              </Button>
-            ))}
+        {otherPuzzles.length > 0 ? (
+          <div className="mt-10 flex flex-col items-center gap-3">
+            <Text variant="label" className="text-game-text-base-secondary">
+              Play another puzzle
+            </Text>
+            <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-center">
+              {otherPuzzles.map((puzzle) => (
+                <Button
+                  key={puzzle}
+                  variant="primary"
+                  type="button"
+                  className="min-w-[8rem]"
+                  onClick={() => handlePlayPuzzle(puzzle)}
+                >
+                  {puzzleLabel(puzzle)}
+                </Button>
+              ))}
+            </div>
           </div>
-        </div>
+        ) : null}
       </div>
     </div>
   );
