@@ -6,7 +6,6 @@ import { GuessModal } from "../components/molecules/GuessModal";
 import { HintCard } from "../components/molecules/HintCard";
 import { WordCloud } from "../components/molecules/WordCloud";
 import {
-  displayCloud,
   getAnswerForHint,
   getLevel,
   usedCloudWords,
@@ -16,7 +15,6 @@ import {
 import { getPuzzleGame } from "../data/puzzles";
 import { getCelebrationDuration } from "../lib/celebrationIntensity";
 import { loadRun, recordCheck, recordMove, submitClue } from "../lib/gameRun";
-import { shuffleCopy } from "../lib/shuffle";
 import { parseGameSettings, pathWithGameSettings, usesCheckScoring } from "../lib/gameSettings";
 
 export function GamePage() {
@@ -39,10 +37,7 @@ export function GamePage() {
   const winNavigateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const levelDef = useMemo(() => getLevel(game, run.level), [game, run.level]);
-  const cloud = useMemo(
-    () => shuffleCopy(displayCloud(game, levelDef)),
-    [game, levelDef],
-  );
+  const cloud = run.cloudWordOrder;
   const cloudWordsUsed = useMemo(
     () => usedCloudWords(levelDef, run.solvedHintIds),
     [levelDef, run.solvedHintIds],

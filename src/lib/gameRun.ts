@@ -4,6 +4,8 @@ import {
   getGameById,
   getLevel,
   isRunState,
+  shuffledCloudForLevel,
+  withCloudWordOrder,
   type ClueSubmission,
   type GameDefinition,
   type LevelsToWin,
@@ -24,24 +26,39 @@ function normalizeRun(parsed: RunState, settings: GameSettings): RunState {
     ...parsed,
     levelsToWin,
     totalMoves: typeof parsed.totalMoves === "number" ? parsed.totalMoves : 0,
+    cloudWordOrder: Array.isArray(parsed.cloudWordOrder) ? parsed.cloudWordOrder : [],
   };
+}
+
+function finalizeLoadedRun(game: GameDefinition, run: RunState): RunState {
+  const withCloud = withCloudWordOrder(game, run);
+  if (withCloud !== run) {
+    saveRun(withCloud);
+  }
+  return withCloud;
+}
+
+function startNewRun(game: GameDefinition, levelsToWin: LevelsToWin): RunState {
+  const run = createInitialRun(game, levelsToWin);
+  saveRun(run);
+  return run;
 }
 
 export function loadRun(game: GameDefinition, settings: GameSettings): RunState {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
-    if (!raw) return createInitialRun(game, settings.levelsToWin);
+    if (!raw) return startNewRun(game, settings.levelsToWin);
     const parsed: unknown = JSON.parse(raw);
     if (!isRunState(parsed) || parsed.gameId !== game.id) {
-      return createInitialRun(game, settings.levelsToWin);
+      return startNewRun(game, settings.levelsToWin);
     }
     const run = normalizeRun(parsed as RunState, settings);
     if (run.levelsToWin !== settings.levelsToWin) {
-      return createInitialRun(game, settings.levelsToWin);
+      return startNewRun(game, settings.levelsToWin);
     }
-    return run;
+    return finalizeLoadedRun(game, run);
   } catch {
-    return createInitialRun(game, settings.levelsToWin);
+    return startNewRun(game, settings.levelsToWin);
   }
 }
 
@@ -105,6 +122,7 @@ export function submitClue(
       level: nextLevel,
       solvedHintIds: [],
       solvedAnswers,
+      cloudWordOrder: shuffledCloudForLevel(game, nextLevel),
     };
     saveRun(next);
     return { ok: true, run: next, complete: false };

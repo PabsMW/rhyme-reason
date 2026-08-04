@@ -1,3 +1,4 @@
+import { shuffleCopy } from "../lib/shuffle";
 import {
   EASY_PUZZLE,
   HARD_PUZZLE,
@@ -45,6 +46,8 @@ export type RunState = {
   status: "playing" | "won";
   /** How many levels must be cleared before the run is won */
   levelsToWin: LevelsToWin;
+  /** Shuffled word-cloud order for the current level (stable across refresh). */
+  cloudWordOrder: string[];
 };
 
 export type ClueSubmission = {
@@ -198,6 +201,46 @@ export function displayCloud(game: GameDefinition, level: LevelDefinition): stri
   });
 }
 
+function wordCounts(words: string[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const word of words) {
+    const key = norm(word);
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return counts;
+}
+
+function sameWordMultiset(a: string[], b: string[]): boolean {
+  const aCounts = wordCounts(a);
+  const bCounts = wordCounts(b);
+  if (aCounts.size !== bCounts.size) return false;
+  for (const [key, count] of aCounts) {
+    if (bCounts.get(key) !== count) return false;
+  }
+  return true;
+}
+
+/** One random shuffle for a level's display cloud (persist on RunState). */
+export function shuffledCloudForLevel(
+  game: GameDefinition,
+  level: 1 | 2 | 3,
+): string[] {
+  return shuffleCopy(displayCloud(game, getLevel(game, level)));
+}
+
+/** Ensures run.cloudWordOrder matches the current level's cloud words. */
+export function withCloudWordOrder(game: GameDefinition, run: RunState): RunState {
+  const canonical = displayCloud(game, getLevel(game, run.level));
+  if (
+    Array.isArray(run.cloudWordOrder) &&
+    run.cloudWordOrder.length === canonical.length &&
+    sameWordMultiset(run.cloudWordOrder, canonical)
+  ) {
+    return run;
+  }
+  return { ...run, cloudWordOrder: shuffleCopy(canonical) };
+}
+
 export function validateClue(
   level: LevelDefinition,
   hintId: string,
@@ -223,7 +266,7 @@ export function createInitialRun(
   game: GameDefinition,
   levelsToWin: LevelsToWin = 3,
 ): RunState {
-  return {
+  return withCloudWordOrder(game, {
     gameId: game.id,
     level: 1,
     solvedHintIds: [],
@@ -231,7 +274,8 @@ export function createInitialRun(
     totalMoves: 0,
     status: "playing",
     levelsToWin,
-  };
+    cloudWordOrder: [],
+  });
 }
 
 export function isRunState(value: unknown): value is RunState {
