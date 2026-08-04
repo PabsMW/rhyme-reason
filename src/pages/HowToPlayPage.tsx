@@ -257,10 +257,7 @@ export function HowToPlayPage() {
     (word): word is string => word !== null,
   );
   const ghostPlacedWords = useNoRailsPractice
-    ? [
-        reasonLocked && reasonWord ? reasonWord : null,
-        rhymeLocked && rhymeWord ? rhymeWord : null,
-      ].filter((word): word is string => word !== null)
+    ? placedWords
     : [
         reasonCorrect && reasonWord ? reasonWord : null,
         rhymeCorrect && rhymeWord ? rhymeWord : null,
@@ -891,11 +888,14 @@ export function HowToPlayPage() {
                               ghostPlacedWords={
                                 isPractice
                                   ? useNoRailsPractice
-                                    ? ghostPlacedWords
+                                    ? placedWords
                                     : []
                                   : step === 2
                                     ? [TUTORIAL_HINT.rhymeWith, ...ghostPlacedWords]
                                     : ghostPlacedWords
+                              }
+                              placedHoldVariant={
+                                useNoRailsPractice ? "solved" : "ghost"
                               }
                               draggable={(step >= 2 && step <= 4) || isPractice}
                               interactionLocked={blockInteraction}

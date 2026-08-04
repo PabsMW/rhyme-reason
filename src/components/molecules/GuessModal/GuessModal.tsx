@@ -145,10 +145,7 @@ export function GuessModal({
   const usesFlowPanel = isClueWordFlowPanel(solveFlow);
   const isFlow3 = solveFlow === "parallel-3";
   const ghostPlacedWords = isNoRails
-    ? [
-        reasonLocked && reasonWord ? reasonWord : null,
-        rhymeLocked && rhymeWord ? rhymeWord : null,
-      ].filter((word): word is string => word !== null)
+    ? placedWords
     : [
         reasonCorrect && reasonWord ? reasonWord : null,
         rhymeCorrect && rhymeWord ? rhymeWord : null,
@@ -696,6 +693,7 @@ export function GuessModal({
               solvedWords={solvedWords}
               placedWords={placedWords}
               ghostPlacedWords={ghostPlacedWords}
+              placedHoldVariant={isNoRails ? "solved" : "ghost"}
               draggable
               interactionLocked={blockInteraction}
               flybackHiddenWord={flyback?.word ?? null}

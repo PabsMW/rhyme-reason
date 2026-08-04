@@ -11,6 +11,8 @@ type WordCloudProps = {
   placedWords?: string[];
   /** Correctly placed words shown in the cloud as inactive placeholders. */
   ghostPlacedWords?: string[];
+  /** Visual for words left in the cloud while they sit in a drop zone. */
+  placedHoldVariant?: "ghost" | "solved";
   /** Allow dragging tiles into drop zones. */
   draggable?: boolean;
   /** Blocks cloud drag and return-drops (e.g. during wrong-word rejection). */
@@ -30,6 +32,7 @@ export function WordCloud({
   solvedWords = [],
   placedWords = [],
   ghostPlacedWords = [],
+  placedHoldVariant = "ghost",
   draggable,
   interactionLocked = false,
   flybackHiddenWord = null,
@@ -80,24 +83,27 @@ export function WordCloud({
       {visibleWords.map((word) => {
         const lower = word.toLowerCase();
         const isCueWord = cueWord?.toLowerCase() === lower;
-        const variant = ghostSet.has(lower)
-          ? "ghost"
-          : solvedSet.has(lower)
+        const isPlacedHold = ghostSet.has(lower);
+        const isDraggingFromHere = wordDrag?.draggingWord?.toLowerCase() === lower;
+        const variant = isPlacedHold
+          ? placedHoldVariant
+          : isDraggingFromHere
             ? "solved"
-            : anchorWord?.toLowerCase() === lower
-              ? "highlighted"
-              : canDrag
-                ? "default"
-                : "display";
+            : solvedSet.has(lower)
+              ? "solved"
+              : anchorWord?.toLowerCase() === lower
+                ? "highlighted"
+                : canDrag
+                  ? "default"
+                  : "display";
         const hiddenForFlyback =
           flybackHiddenLower !== null && lower === flybackHiddenLower;
-        const tileDraggable = canDrag && variant !== "ghost" && !hiddenForFlyback;
+        const tileDraggable =
+          canDrag && variant !== "ghost" && !isPlacedHold && !hiddenForFlyback;
         const dragBind =
           wordDrag && tileDraggable
             ? wordDrag.bindTile(word, { kind: "cloud" })
             : undefined;
-        const dragSourceHidden =
-          wordDrag?.draggingWord?.toLowerCase() === lower;
         return (
           <span
             key={word}
@@ -109,7 +115,6 @@ export function WordCloud({
               variant={variant}
               draggable={tileDraggable && !dragBind}
               dragBind={dragBind}
-              dragSourceHidden={dragSourceHidden}
               onDragStart={onDragStart}
               className={isCueWord && tileDraggable ? "word-cloud-tile--cue-pulse" : undefined}
             />
