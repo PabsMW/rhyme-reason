@@ -20,7 +20,7 @@ export type GameSettings = {
 
 export const DEFAULT_GAME_SETTINGS: GameSettings = {
   levelsToWin: 3,
-  solveFlow: "sequential",
+  solveFlow: "no-rails",
   alwaysShowTutorial: false,
   puzzle: "easy",
 };
